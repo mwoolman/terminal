@@ -4,6 +4,7 @@ var cvs;
 terminal = {
 	'width' : 80,
 	'height' : 24,
+	'background': 'black',
 	'csr' : {'x' : 0, 'y': 0, 'on': true, 'interval' : null },
 	'text' : {'color' : '#009900', 'font' : '15px courier', 'width' : 9, 'height' : 15 },
 	'sel' : {'on' : false, 'sx' : 0, 'sy' : 0, 'ex':0, 'ey' : 0},
@@ -13,18 +14,27 @@ terminal = {
 	//member functions
 	//cursor Fuctions
 	'drawCursor' : function(){
+		var tmpx = this.csr.x;
+		var tmpy = this.csr.y;
+		var c = this.textBuffer[tmpy][tmpx];
 	    if(this.csr.on){
 		this.ctx.save();
 		this.ctx.fillStyle = this.text.color;
-		this.ctx.fillRect(this.csr.x, this.csr.y, this.text.width, this.text.height);
+		this.ctx.fillRect( tmpx*this.text.width, tmpy * this.text.height, this.text.width, this.text.height );
+		if(c){
+		   this.writeChar(c, tmpx, tmpy, terminal.background);
+		}
 		this.ctx.restore();
 	    }else{
-		this.ctx.clearRect(this.csr.x, this.csr.y, this.text.width, this.text.height);
+		this.ctx.clearRect(this.csr.x*this.text.width, this.csr.y*this.text.height, this.text.width, this.text.height);
+		if(c){
+		   this.writeChar(c, tmpx, tmpy);
+		}
 	    }
-	}
+	    this.csr.on = !this.csr.on;
+	},
 	'eraseCursor' : function(){
-			this.csr.on = false;
-			this.drawCursor();
+	    this.ctx.clearRect(this.csr.x*this.text.width, this.csr.y*this.text.height, this.text.width, this.text.height);
 	},
 	'startCursor' : function(){
 			this.csr.interval = setInterval('terminal.drawCursor()', 500);
@@ -32,142 +42,128 @@ terminal = {
 	'stopCursor' : function(){
 			clearInterval(this.csr.interval);
 			eraseCursor();
-	}
+	},
 	//character functions
 	'writeChar' : function( ch, x, y, color ){
-			if(!color ) {
+			var incr = false;
+			if(color == undefined ) {
 			color = this.text.color;
+			}
+			if(x == undefined){
+			     x = this.csr.x;
+			     incr = true;
+			     this.eraseCursor();
+			}
+			if(y == undefined){
+			    y = this.csr.y;
+			    incr = true;
 			}
 			this.ctx.save();
 			//setup context
 			this.ctx.font = this.text.font;
-			this.ctx.fillStyle = this.text.color;
+			this.ctx.fillStyle = color;
 			this.ctx.textBaseline = 'top';
 			//save the text to buffer
 			this.textBuffer[y][x] = ch;
 			//draw the text
 			this.ctx.fillText(ch, x*this.text.width, y*this.text.height);			
+			if(incr){
+			    this.csr.x++;
+			    if(this.csr.x > terminal.width){
+				this.csr.x = 0;
+				this.csr.y ++;
+			    }
+			}
 
 			this.ctx.restore();
 		    }
 	};
 	
-	}
-
-var term ={
-	'width' : 80,
-	'height' : 24,
-	'csr' : {'x': 0, 'y': 0},
-	'font' : '15px courier',
-	'textColor' : '#009900',
-	'textSize' : {'width' : 9, 'height':15},
-	'cursorOn' : true,
-	'textBuffer' : [],
-	'cursorInterval' : null,
-	'selecting' : false,
-	'selection' : { 'sx' : 0, 'sy' : 0, 'ex' : 0, 'ey' : 0 }
-    };
 
 
-function drawCursor(){
-    if(term.cursorOn){
-	ctx.save();
-	ctx.fillStyle = term.textColor;
-	ctx.fillRect(term.csr.x, 
-		    term.csr.y, 
-		    term.textSize.width,
-		    term.textSize.height);
-	ctx.restore();
-	term.cursorOn = false;
-    }else{
-	ctx.clearRect(term.csr.x, 
-		    term.csr.y , 
-		    term.textSize.width,
-		    term.textSize.height);
-	term.cursorOn = true;
-    }
-}
 
 function init(){
     cvs = document.getElementById('cvs');
     ctx = cvs.getContext('2d');
-    cvs.width = term.width * term.textSize.width;
-    cvs.height = term.height *(term.textSize.height);
+    cvs.width = terminal.width * terminal.text.width;
+    cvs.height = terminal.height *(terminal.text.height);
+    terminal.cvs = cvs;
+    terminal.ctx = ctx;
     //set up buffers
-    term.textBuffer.length = term.height;
-    for( i = 0; i < term.textBuffer.length; ++i){
-	term.textBuffer[i] = [];
-	term.textBuffer[i].length = term.width;
+    terminal.textBuffer.length = terminal.height;
+    for( i = 0; i < terminal.textBuffer.length; ++i){
+	terminal.textBuffer[i] = [];
+	terminal.textBuffer[i].length = terminal.width;
     }
     //setup event handlers
     document.onkeypress = keyboardInput;
-    cvs.addEventListener('mousedown',selectEvent, false);
-    cvs.addEventListener('mousemove',selectEvent, false);
-    cvs.addEventListener('mouseup',selectEvent, false);
+    //cvs.addEventListener('mousedown',selectEvent, false);
+    //cvs.addEventListener('mousemove',selectEvent, false);
+    //cvs.addEventListener('mouseup',selectEvent, false);
     //draw some testing stuff
-    startCursor();
-    writeChar('>');
+    terminal.startCursor();
+    terminal.writeChar('>');
 }
 
-function startCursor(){
-    term.cursorInterval = setInterval('drawCursor()', 500);
-
-}
-
-function stopCursor(){
-    clearInterval(term.cursorInterval);
-    eraseCursor();
-}
-
-function writeChar(msg){
-    eraseCursor();
-    ctx.save();
-    //save value into buffer
-    term.textBuffer[term.csr.y/term.textSize.height][term.csr.x/term.textSize.width] = msg;
-
-    //render char to screen
-    ctx.textBaseline = 'top';
-    ctx.font = term.font;
-    ctx.fillStyle = term.textColor;
-    ctx.fillText(msg, term.csr.x, term.csr.y);
-    term.csr.x += ctx.measureText(msg).width;
-    
-
-    ctx.restore();
-}
 
 function error(msg){
     document.getElementById('errors').innerHTML += '\n<p>' + msg + '</p>';
 }
 
-function eraseCursor(){
-term.cursorOn = false;
-drawCursor();
-}
 
 
 function keyboardInput( ev ){
     var key = ev.keyCode;
     switch(key){
+	case 37:
+	    if(terminal.csr.x > 0){
+		terminal.csr.on = false;
+		terminal.drawCursor();
+		terminal.csr.x--;
+	    }
+	    break;
+	case 38:
+	    if(terminal.csr.y > 0){
+		terminal.csr.on = false;
+		terminal.drawCursor();
+		terminal.csr.y--;
+	    }
+	    break;
+	case 39:
+	    if(terminal.csr.x < terminal.width){
+		terminal.csr.on = false;
+		terminal.drawCursor();
+		terminal.csr.x++;
+	    }
+	    break;
+	case 40:
+	    if( terminal.csr.y < terminal.height){
+		terminal.csr.on = false;
+		terminal.drawCursor();
+		terminal.csr.y++;
+	    }
+	    break;
 	case 13:
-	    eraseCursor();
-	    term.csr.y += term.textSize.height;
-	    term.csr.x = 0;
-	    writeChar('>');
+	    terminal.eraseCursor();
+	    terminal.csr.y ++;
+	    terminal.csr.x = 0;
+	    terminal.writeChar('>');
 	    break;
 	case 8 : //backspace
-	    if(term.csr.x > term.textSize.width){
-		eraseCursor();
-		term.textBuffer[term.csr.y/term.textSize.height][term.csr.x/term.textSize.width] = '';
-		term.csr.x -= term.textSize.width;
+	    if(terminal.csr.x > 0){
+		terminal.csr.on = false;
+		terminal.drawCursor();
+		terminal.csr.x--;
+		terminal.eraseCursor();
+		terminal.textBuffer[terminal.csr.y][terminal.csr.x] = undefined;
 	    }
 	    break;
 	default:
 	    key = String.fromCharCode(ev.which);
-	    writeChar(key);
+	    terminal.writeChar(key);
     }
 }
-
+/*
 function selectEvent( ev){
     //if mouse down
 	var x = ev.layerX - cvs.offsetTop;
@@ -209,4 +205,4 @@ function selectEvent( ev){
 	term.selecting = false;
     }
 }
-
+*/
