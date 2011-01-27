@@ -1,63 +1,73 @@
-var ctx;
-var cvs;
 
-terminal = {
-	'width' : 80,
-	'height' : 24,
+function createTerminal( cnvs, height, width ){
+	var ctx = cnvs.getContext('2d');
+	if( height == undefined){
+		height = 24;
+	}
+	if( width == undefined ){
+		width = 80;
+	}
+	cvs.width = width;
+	cvs.height = height;
+
+	var textBuff = [];
+	textBuff.length = height;
+	for( i = 0; i < height ; i++){
+		textBuff[i] = [];
+		textBuff[i].length = width;
+	}
+	//create terminal structure
+
+	var t =	{
+	'width' : width,
+	'height' : height,
 	'background': 'black',
-	'csr' : {'x' : 0, 'y': 0, 'on': true, 'interval' : null },
+	'csr' : {'x' : 0, 'y': 0 },
 	'text' : {'color' : '#009900', 'font' : '15px courier', 'width' : 9, 'height' : 15 },
 	'sel' : {'on' : false, 'sx' : 0, 'sy' : 0, 'ex':0, 'ey' : 0},
-	'textBuffer' : [],
-	'cvs' : cvs,
+	'textBuffer' : textBuff,
+	'cvs' : cnvs,
 	'ctx' : ctx,
 	//member functions
 	//cursor Fuctions
-	'drawCursor' : function(){
-		var tmpx = this.csr.x;
-		var tmpy = this.csr.y;
-		var c = this.textBuffer[tmpy][tmpx];
-	    if(this.csr.on){
+	'drawBlock' : function(x, y, color ){
+		if( color == undefined){
+			color = this.text.color;
+		}
+		if( y == undefined){
+			y = this.csr.y;
+		}
+		if( x == undefined){
+			x  = this.csr.x;
+		}
 		this.ctx.save();
-		this.ctx.fillStyle = this.text.color;
-		this.ctx.fillRect( tmpx*this.text.width, tmpy * this.text.height, this.text.width, this.text.height );
-		if(c){
-		   this.writeChar(c, tmpx, tmpy, terminal.background);
-		}
+		this.ctx.fillStyle = color;
+		this.ctx.fillRect(x*this.text.width, y * this.text.height, this.text.width, this.text.height);
 		this.ctx.restore();
-	    }else{
-		this.ctx.clearRect(this.csr.x*this.text.width, this.csr.y*this.text.height, this.text.width, this.text.height);
-		if(c){
-		   this.writeChar(c, tmpx, tmpy);
+	},
+	'clearBlock' : function(x, y){
+		//default to clearing the cursor position
+		if(x == undefined ){
+			x  = this.csr.x;
 		}
-	    }
-	    this.csr.on = !this.csr.on;
-	},
-	'eraseCursor' : function(){
-	    this.ctx.clearRect(this.csr.x*this.text.width, this.csr.y*this.text.height, this.text.width, this.text.height);
-	},
-	'startCursor' : function(){
-			this.csr.interval = setInterval('terminal.drawCursor()', 500);
-	},
-	'stopCursor' : function(){
-			clearInterval(this.csr.interval);
-			eraseCursor();
+		if( y == undefined){ 
+			y  = this.csr.y;
+		}
+		//clear the rectangle
+	    this.ctx.clearRect(x*this.text.width, y*this.text.height, this.text.width, this.text.height);
 	},
 	//character functions
 	'writeChar' : function( ch, x, y, color ){
-			var incr = false;
 			if(color == undefined ) {
 			color = this.text.color;
 			}
 			if(x == undefined){
 			     x = this.csr.x;
-			     incr = true;
-			     this.eraseCursor();
 			}
 			if(y == undefined){
 			    y = this.csr.y;
-			    incr = true;
 			}
+
 			this.ctx.save();
 			//setup context
 			this.ctx.font = this.text.font;
@@ -67,42 +77,155 @@ terminal = {
 			this.textBuffer[y][x] = ch;
 			//draw the text
 			this.ctx.fillText(ch, x*this.text.width, y*this.text.height);			
-			if(incr){
-			    this.csr.x++;
-			    if(this.csr.x > terminal.width){
-				this.csr.x = 0;
-				this.csr.y ++;
-			    }
-			}
-
 			this.ctx.restore();
-		    }
+		    },
+		'incCursor' : function () {
+			this.csr.x++;
+			if ( this.csr.x >= this.width ){
+				this.csr.x = 0;
+				this.csr.y++;
+			}
+		},
+		'setCursor' : function (x,y ){
+			if( x == undefined || y == undefined ){
+				return;
+			}else{
+				this.csr.x = x;
+				this.csr.y = y;
+			}
+		},
+		'resize' : function ( height, width ){
+			if( width == undefined || height == undefined){
+				return;
+			}
+			this.cvs.width = width * this.text.width;
+			this.cvs.height = height * this.text.height;
+			this.width = width;
+			this.height = height;
+		},
+		'charAt' : function (x,y) {
+			if( x == undefined || y == undefined){
+				return undefined;
+			}
+			if( x < 0 || x > this.width || y < 0 || y > height ){
+				return undefined;
+			}
+			return this.textBuffer[y][x];
+		}
+	};
+	t.resize(height, width);
+	return t;
+}
+
+
+term = {
+		't' : undefined,
+		'csr' : {
+				'x' : 0, 
+				'y': 0, 
+				'on' : false, 
+				'interval' : undefined, 
+				'blinkrate' : 500},
+		'drawCursor' : function(){
+			var x = this.csr.x;
+			var y = this.csr.y;
+			var c = this.t.charAt(this.csr.x, this.csr.y);
+		 	if( this.csr.on){
+				this.t.drawBlock(x,y);
+				if( c != undefined) {
+					this.t.writeChar(c,x,y, this.t.background);
+				}
+			}else{
+				this.t.clearBlock(x,y);
+				if( c != undefined ){
+					this.t.writeChar(c,x,y );
+				}
+			}
+			this.csr.on = !this.csr.on;
+		},
+		//dont like this, get rid of if not needed
+		'incCursor' : function(){
+			this.t.incCursor();
+			this.csr.x = this.t.csr.x;
+			this.csr.y = this.t.csr.y;
+		},
+		'print' : function (msg, color){
+			if( msg == undefined ){
+				return;
+			}
+			this.clearCursor();
+			var	x = this.csr.x;
+			var	y = this.csr.y;
+			for( i = 0; i < msg.length; ++i ){
+				this.t.writeChar( msg.charAt(i), x+i, y, color );
+				this.incCursor();
+			}
+		},
+		'backspace' : function(){
+			this.clearCursor();
+			if( this.csr.x > 0 ){
+				this.csr.x--;
+				this.t.csr.x--;
+				this.t.textBuffer[this.csr.y][this.csr.x] = undefined;
+			}
+		},
+		'newline' : function (){
+			this.clearCursor();
+			if( this.csr.y < this.t.height){
+				this.csr.y++;
+				this.csr.x = 0;
+				this.t.csr.x = 0;
+				this.t.csr.y++;
+			}
+			this.print('>');
+		},
+		'clearCursor' : function (){
+			var c = this.t.charAt(this.csr.x, this.csr.y);
+			this.t.clearBlock(this.csr.x, this.csr.y);
+			if( c != undefined ){
+				this.t.writeChar(c, this.csr.x, this.csr.y);
+			}
+		},
+		'cursorTo' : function (x, y){
+			if(x == undefined || y == undefined ){
+				return;
+			}
+			if( x < 0 || x > this.t.width || y < 0 || y > this.t.height ){
+				return;
+			}
+			this.clearCursor();
+			this.t.csr.x = x;
+			this.t.csr.y = y;
+			this.csr.x = x;
+			this.csr.y = y;
+		}
+
 	};
 	
 
+function startCursor(){
+	term.csr.interval = setInterval('term.drawCursor()', term.csr.blinkrate );
+	
+}
+
+function stopCursor(){
+	clearInterval(term.csr.interval);
+	term.clearCursor();
+}
 
 
 function init(){
     cvs = document.getElementById('cvs');
-    ctx = cvs.getContext('2d');
-    cvs.width = terminal.width * terminal.text.width;
-    cvs.height = terminal.height *(terminal.text.height);
-    terminal.cvs = cvs;
-    terminal.ctx = ctx;
-    //set up buffers
-    terminal.textBuffer.length = terminal.height;
-    for( i = 0; i < terminal.textBuffer.length; ++i){
-	terminal.textBuffer[i] = [];
-	terminal.textBuffer[i].length = terminal.width;
-    }
+	//canvas height width
+	term.t = createTerminal(cvs, 24, 80);
     //setup event handlers
     document.onkeypress = keyboardInput;
     //cvs.addEventListener('mousedown',selectEvent, false);
     //cvs.addEventListener('mousemove',selectEvent, false);
     //cvs.addEventListener('mouseup',selectEvent, false);
     //draw some testing stuff
-    terminal.startCursor();
-    terminal.writeChar('>');
+    term.print('>');
+	startCursor();
 }
 
 
@@ -116,93 +239,25 @@ function keyboardInput( ev ){
     var key = ev.keyCode;
     switch(key){
 	case 37:
-	    if(terminal.csr.x > 0){
-		terminal.csr.on = false;
-		terminal.drawCursor();
-		terminal.csr.x--;
-	    }
+		term.cursorTo( term.csr.x - 1, term.csr.y);
 	    break;
 	case 38:
-	    if(terminal.csr.y > 0){
-		terminal.csr.on = false;
-		terminal.drawCursor();
-		terminal.csr.y--;
-	    }
+		term.cursorTo( term.csr.x, term.csr.y - 1);
 	    break;
 	case 39:
-	    if(terminal.csr.x < terminal.width){
-		terminal.csr.on = false;
-		terminal.drawCursor();
-		terminal.csr.x++;
-	    }
+		term.cursorTo( term.csr.x + 1, term.csr.y);
 	    break;
 	case 40:
-	    if( terminal.csr.y < terminal.height){
-		terminal.csr.on = false;
-		terminal.drawCursor();
-		terminal.csr.y++;
-	    }
+		term.cursorTo( term.csr.x, term.csr.y + 1);
 	    break;
 	case 13:
-	    terminal.eraseCursor();
-	    terminal.csr.y ++;
-	    terminal.csr.x = 0;
-	    terminal.writeChar('>');
+		term.newline();
 	    break;
 	case 8 : //backspace
-	    if(terminal.csr.x > 0){
-		terminal.csr.on = false;
-		terminal.drawCursor();
-		terminal.csr.x--;
-		terminal.eraseCursor();
-		terminal.textBuffer[terminal.csr.y][terminal.csr.x] = undefined;
-	    }
+		term.backspace();
 	    break;
 	default:
 	    key = String.fromCharCode(ev.which);
-	    terminal.writeChar(key);
+	    term.print(key);
     }
 }
-/*
-function selectEvent( ev){
-    //if mouse down
-	var x = ev.layerX - cvs.offsetTop;
-	var y = ev.layerY - cvs.offsetLeft;
-    if(!term.selecting && !(ev.type == 'mousedown')){
-	return;
-    }
-    if(ev.type == 'mousedown' && !term.selecting){
-	stopCursor();
-	term.selecting = true;
-	term.selection.sx = x - (x % term.textSize.width);
-	term.selection.sy = y - (y % term.textSize.height);
-	term.selection.ex = term.selection.sx + term.textSize.width;
-	term.selection.ey = term.selection.sy + term.textSize.height;
-	ctx.save();
-	ctx.fillStyle = term.textColor;
-	ctx.fillRect(term.selection.sx, term.selection.sy, term.testSize.width, term.textSize.height);
-	ctx.restore();
-	ctx.save();
-	ctx.textBaseline = 'top';
-	ctx.font = term.font;
-	ctx.fillText(term.textBuffer[term.selection.sy/term.textSize.height ][term.selection.sx/term.textSize.width],term.selection.sx, term.selection.sy); 
-	ctx.restore();
-    }else if( ev.type == 'mousemove' && term.selecting ){
-	    ctx.clearRect(term.selection.sx, term.selection.sy,
-			term.selection.ex - term.selection.sx,
-			term.selection.ey - term.selection.sy);
-	
-	term.selection.ex = x + (term.textSize.width - (x % term.textSize.width));
-	term.selection.ey = y + (term.textSize.height - (y % term.textSize.height));
-	ctx.save();
-	    ctx.fillStyle = term.textColor;
-	    ctx.fillRect(term.selection.sx, term.selection.sy,
-			term.selection.ex - term.selection.sx,
-			term.selection.ey - term.selection.sy);
-	ctx.restore();
-    }else if( ev.type == 'mouseup'){
-	startCursor();
-	term.selecting = false;
-    }
-}
-*/
