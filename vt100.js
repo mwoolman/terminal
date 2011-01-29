@@ -145,8 +145,21 @@ function processEscape(msg){
     var lastidx = 0;
     for( var idx in msg.split('')){
 	switch(msg.charAt(idx)){
+		case '':
+			if(state.substr(0,5) == 'xterm'){
+				state = 'done';
+				args.push(token);
+				token = 'xterm';
+			}else{
+				token += msg.charAt(idx);
+			}
+			break;
+		case ']': 
+			state='xterm-id';
+			break;
 	    case '[':
-		break;
+			state = 'vt100'
+			break;
 	    case '0':
 	    case '1':
 	    case '2':
@@ -158,16 +171,49 @@ function processEscape(msg){
 		token += msg.charAt(idx);
 		break;
 	    case ';':
-		args.push(parseInt(token));
-		token = '';
+		if( state == 'vt100'){
+			args.push(parseInt(token));
+			token = '';
+		}else if(state == 'xterm-id'){
+			switch(token){
+				case "0":
+					args.push('title-icon');//should be both icon and title
+					break;
+				case "1":
+					args.push('icon');
+					break;
+				case '2':
+					args.push('title');
+					break;
+				default:
+					state = 'done';
+					break;
+			}
+			token = '';
+			if(state != 'done'){
+				state = 'xterm-str';
+			}
+		}else{
+			token += msg.charAt(idx);
+		}
 		break;
 		case 'm':
-		state = 'done';
-		args.push(parseInt(token));
-		token = msg.charAt(idx);
+		if( state == 'vt100'){
+			state = 'done';
+			args.push(parseInt(token));
+			token = msg.charAt(idx);
+		}else{//otherwise xterm
+			token += msg.charAt(idx);
+		}
 		break;	
 	    default:
-		state = 'done';
+			if(state == 'xterm-str'){
+				token += msg.charAt(idx);
+			}else{
+				token = '';
+				state = 'done';
+			}
+			break;
 	}
 	if( state == 'done' ){
 	    lastidx = Number(idx)+1;
@@ -215,7 +261,11 @@ function processEscape(msg){
 		    break;
 	    }
 	}
-    }
+    }else if( token == 'xterm'){
+		if(args[0].substr(0,5) == 'title'){
+			document.title = args[1];
+		}
+	}
     return lastidx;   
 }
     
