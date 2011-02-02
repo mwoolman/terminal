@@ -1,5 +1,6 @@
 <html>
 <head>
+<script src="/socket.io/socket.io.js" type='application/x-javascript'></script>
 <script src='grid.js' type='application/x-javascript'></script>
 <script src='data.js' type='application/x-javascript'></script>
 <script src='vt100.js' type='application/x-javascript'></script>
@@ -12,6 +13,9 @@
 </head>
 <body onload='init();'>
     <canvas id='cvs' width='800' height='500'>browser doesn't support canvas</canvas>
+    <a href="javascript:sendbackspace()">backspace</a> | 
+    <a href='javascript:enableDebug()'>turn on debug</a> | 
+    <a href='javascript:disableDebug()'>turn off debug </a>  
     <div id='coords'></div>
     <div id='errors'></div>
 </body>

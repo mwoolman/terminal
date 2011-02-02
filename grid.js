@@ -22,6 +22,7 @@ function createTerminal( cnvs, height, width ){
 	'width' : width,
 	'height' : height,
 	'background': 'black',
+	'scrollRegion': {start: 0, end: height},
 	'csr' : {'x' : 0, 'y': 0 },
 	'text' : {'color' : '#009900', 'font' : '15px courier', 'width' : 9, 'height' : 15 },
 	'sel' : {'on' : false, 'sx' : 0, 'sy' : 0, 'ex':0, 'ey' : 0},
@@ -29,6 +30,14 @@ function createTerminal( cnvs, height, width ){
 	'cvs' : cnvs,
 	'ctx' : ctx,
 	//member functions
+	'setScrollRegion' : function( start, end){
+	    if( start == undefined ){
+		start = 0;
+		end = this.height;
+	    }
+	    this.scrollRegion.start = start;
+	    this.scrollRegion.end = end;
+	},
 	//cursor Fuctions
 	'drawBlock' : function(x, y, color ){
 		if( color == undefined){
@@ -40,10 +49,22 @@ function createTerminal( cnvs, height, width ){
 		if( x == undefined){
 			x  = this.csr.x;
 		}
+		if( color == 'blue' ){
+		}
 		this.ctx.save();
 		this.ctx.fillStyle = color;
 		this.ctx.fillRect(x*this.text.width, y * this.text.height, this.text.width, this.text.height);
 		this.ctx.restore();
+	},
+	'clearRegion': function(x,y, width, height){
+	    this.ctx.save();
+	    this.ctx.clearRect(x*this.text.width, y*this.text.height, this.text.width * width, this.text.height * height);
+	    for( var i = x; i < x+width; ++i){
+		for( var j = y; j < y+height; ++j){
+		    this.textBuffer[j][i] = undefined;
+		}
+	    }
+	    this.ctx.restore();
 	},
 	'clearBlock' : function(x, y){
 		//default to clearing the cursor position
@@ -54,7 +75,7 @@ function createTerminal( cnvs, height, width ){
 			y  = this.csr.y;
 		}
 		//clear the rectangle
-	    this.ctx.clearRect(x*this.text.width, y*this.text.height, this.text.width, this.text.height);
+	    this.clearRegion(x, y, 1, 1);
 	},
 	//character functions
 	'writeChar' : function( ch, x, y, color ){
@@ -85,6 +106,11 @@ function createTerminal( cnvs, height, width ){
 				this.csr.x = 0;
 				this.csr.y++;
 			}
+			if(this.csr.y >= this.height){
+			    this.csr.y--;
+			    this.scrollUp();
+			}
+			document.getElementById('coords').innerHTML = "x: " + this.csr.x + " y: " + this.csr.y;
 		},
 		'setCursor' : function (x,y ){
 			if( x == undefined || y == undefined ){
@@ -113,13 +139,17 @@ function createTerminal( cnvs, height, width ){
 			return this.textBuffer[y][x];
 		},
 		'scrollUp' : function (){
-		    var i_data = this.ctx.getImageData(0,this.text.height,this.cvs.width, this.cvs.height - this.text.height);
-		    this.ctx.putImageData(i_data, 0, 0 );
-		    this.ctx.clearRect(0, this.cvs.height - this.text.height, this.cvs.width, this.text.height);
-		    this.textBuffer.splice(0,1);
-		    this.textBuffer.length = this.height;
-		    this.textBuffer[this.height -1] = [];
-		    this.textBuffer[this.height -1].length = this.width;
+		    this.ctx.save();
+		    var i_data = this.ctx.getImageData(0,(this.scrollRegion.start +1) * this.text.height,this.cvs.width, (this.scrollRegion.end * this.text.height) - this.text.height);
+		    this.ctx.putImageData(i_data, 0, this.scrollRegion.start*this.text.height);
+		    this.ctx.clearRect(0, (this.scrollRegion.end-1)*this.text.height, this.cvs.width, this.text.height);
+		    var newline = [];
+		    newline.length = this.width;
+		    //splice out the line which has scrolled off the screen
+		    this.textBuffer.splice(this.scrollRegion.start,1);
+		    //splice in the new line buffer
+		    this.textBuffer.splice(this.scrollRegion.end-1,0, newline);
+		    this.ctx.restore();
 		    
 		}
 	};
