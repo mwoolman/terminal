@@ -288,9 +288,11 @@ function processEscape(msg){
 			case 0:
 			    term.text.color = undefined;
 			    term.text.bgcolor = undefined;
+			    term.text.attr = undefined;
 			    //reset attrs
 			    break;
 			case 1:
+			    term.text.attr += 'bright';
 			    //bright
 			    break;
 			case 2:
@@ -446,7 +448,7 @@ function processEscape(msg){
     return lastidx;   
 }
 
-var socket = new io.Socket('localhost', {port:8080 }); 
+var socket = new io.Socket(null, {port:8080 }); 
 
 var printBuff = [];
 var printInt = undefined;
@@ -514,6 +516,10 @@ function renderVt100(msg){
 
 function sendbackspace(){
 	    socket.send('');
+}
+
+function sendEscape(){
+	socket.send('');
 }
 
 function keyboardInput( ev ){
