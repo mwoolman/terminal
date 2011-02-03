@@ -1,140 +1,140 @@
 var debug = false;
 
+var term = undefined;
 
-term = {
-		't' : undefined,
-		'csr' : {
-				'x' : 0, 
-				'y': 0, 
-				'on' : false, 
-				'interval' : undefined, 
-				'blinkrate' : 500},
-		'text' : {'color' : undefined, 'bgcolor' : undefined},
-		'drawCursor' : function(){
-			var x = this.csr.x;
-			var y = this.csr.y;
-			var c = this.t.charAt(this.csr.x, this.csr.y);
-			var bgcolor = this.text.bgcolor;
-			if( bgcolor == undefined){
-			    bgcolor = this.t.background;
-			}
-		 	if( this.csr.on){
-				this.t.drawBlock(x,y);
-				if( c != undefined) {
-					this.t.writeChar(c,x,y, bgcolor);
-				}
-			}else{
-				this.t.drawBlock(x,y, bgcolor);
-				if( c != undefined ){
-					this.t.writeChar(c,x,y );
-				}
-			}
-			this.csr.on = !this.csr.on;
-		},
-		//dont like this, get rid of if not needed
-		'incCursor' : function(){
-			this.t.incCursor();
-			this.csr.x = this.t.csr.x;
-			this.csr.y = this.t.csr.y;
-		},
-		'print' : function (msg, color){
-			if( msg == undefined ){
-				return;
-			}
-			if( color == undefined){
-			    color = this.text.color;
-			}
-			this.clearCursor();
-			var	x = this.csr.x;
-			var	y = this.csr.y;
-			for( i = 0; i < msg.length; ++i ){
-				if( this.text.bgcolor != undefined ){
-				    this.t.drawBlock(x+i, y, this.text.bgcolor);
-				}
-				this.t.writeChar( msg.charAt(i), x+i, y, color );
-				this.incCursor();
-			}
-		},
-		'backspace' : function(){
-			this.clearCursor();
-			if( this.csr.x > 0 ){
-				this.csr.x--;
-				this.t.csr.x--;
-				this.t.textBuffer[this.csr.y][this.csr.x] = undefined;
-			}
-		},
-		'newline' : function (){
-			this.clearCursor();
-			if( this.csr.y < this.t.height-1){
-				this.csr.y++;
-				this.csr.x = 0;
-				this.t.csr.x = 0;
-				this.t.csr.y++;
-			}else{
-			    this.csr.x = 0;
-			    this.t.csr.x = 0;
-			    this.t.scrollUp();
-			}
-			//this.print('>');
-		},
-		'cr' : function(){
-		    this.t.csr.x = 0;
-		    this.csr.x = 0;
-		},
-		'clearCursor' : function (){
-			var c = this.t.charAt(this.csr.x, this.csr.y);
-			this.t.clearBlock(this.csr.x, this.csr.y);
-			if( c != undefined ){
-				this.t.writeChar(c, this.csr.x, this.csr.y);
-			}
-		},
-		'cursorTo' : function (x, y){
-			if(x == undefined || y == undefined ){
-				return;
-			}
-			if( x < 0 || x >= this.t.width || y < 0 || y >= this.t.height ){
-			    if(x < 0){
-				x = 0;
-			    }else if(x >= this.t.width){
-				x = this.t.width -1;
-			    }
-			    if(y < 0){
-				y = 0;
-			    }else if(y >= this.t.height){
-				y = this.t.height -1;
-			    }
-			}
-			this.clearCursor();
-			this.t.csr.x = x;
-			this.t.csr.y = y;
-			this.csr.x = x;
-			this.csr.y = y;
+function terminal(cnvs, height, width){
+    terminal.prototype.constructor(cnvs, height, width);
+    //add csr info
+    this.csr.on = false;
+    this.csr.interval = undefined;
+    this.csr.blinkrate = 500;
+    //add text stuff
+    this.text = {bgcolor : undefined, color : undefined };
+    //members
+    this.drawCursor = function(){
+	var x = this.csr.x;
+	var y = this.csr.y;
+	var c = this.charAt(this.csr.x, this.csr.y);
+	var bgcolor = this.text.bgcolor;
+	if( bgcolor == undefined){
+	    bgcolor = this.background;
+	}
+	if( this.csr.on){
+		this.drawBlock(x,y);
+		if( c != undefined) {
+			this.writeChar(c,x,y, bgcolor);
 		}
+	}else{
+		this.drawBlock(x,y, bgcolor);
+		if( c != undefined ){
+			this.writeChar(c,x,y );
+		}
+	}
+	this.csr.on = !this.csr.on;
+    };
+    //print
+    this.print = function (msg, color){
+	if( msg == undefined ){
+		return;
+	}
+	if( color == undefined){
+	    color = this.text.color;
+	}
+	this.clearCursor();
+	var x = this.csr.x;
+	var y = this.csr.y;
+	for( i = 0; i < msg.length; ++i ){
+		if( this.text.bgcolor != undefined ){
+		    this.drawBlock(x+i, y, this.text.bgcolor);
+		}
+		this.writeChar( msg.charAt(i), x+i, y, color );
+		this.incCursor();
+	}
+    };
+    this.backspace = function(){
+	    this.clearCursor();
+	    if( this.csr.x > 0 ){
+		    this.__proto__.csr.x--;
+		    this.__proto__.textBuffer[this.csr.y][this.csr.x] = undefined;
+	    }
+    };
+    this.newline = function (){
+	    this.clearCursor();
+	    if( this.csr.y < this.height-1){
+		    this.__proto__.csr.y++;
+		    this.__proto__.csr.x = 0;
+	    }else{
+		this.__proto__.csr.x = 0;
+		this.scrollUp();
+	    }
+    };
+    this.cr = function(){
+	this.__proto__.csr.x = 0;
+    };
+    this.clearCursor = function (){
+	var c = this.charAt(this.csr.x, this.csr.y);
+	this.clearBlock(this.csr.x, this.csr.y);
+	if( c != undefined ){
+		this.writeChar(c, this.csr.x, this.csr.y);
+	}
+    };
+    this.cursorTo = function (x, y){
+	if(x == undefined || y == undefined ){
+	    return;
+	}
+	if( x < 0 || x >= this.width || y < 0 || y >= this.height ){
+	    if(x < 0){
+		x = 0;
+	    }else if(x >= this.width){
+		x = this.width -1;
+	    }
+	    if(y < 0){
+		y = 0;
+	    }else if(y >= this.height){
+		y = this.height -1;
+	    }
+	}
+	this.clearCursor();
+	this.__proto__.csr.x = x;
+	this.__proto__.csr.y = y;
+    };
 
-	};
-	
+    
+}
 
+terminal.prototype = new terminalGrid;
+
+terminal.prototype.startCursor = function(){
+    var obj = this;
+    if( this.csr.interval == undefined ){
+	this.csr.interval = setInterval('term.drawCursor()', this.csr.blinkrate );
+    }
+}
+/*
+//additional stuff
 function startCursor(){
 	if( term.csr.interval == undefined){
-	term.csr.interval = setInterval('term.drawCursor()', term.csr.blinkrate );
+	term.csr.interval = setInterval(term.drawCursor()', term.csr.blinkrate );
 	}
 	
 }
+*/
 
-function stopCursor(){
-	clearInterval(term.csr.interval);
-	term.csr.interval = undefined;
-	if( term.csr.on ){
-	term.clearCursor();
+
+terminal.prototype.stopCursor = function(){
+	clearInterval(this.csr.interval);
+	this.csr.interval = undefined;
+	if( this.csr.on ){
+	this.clearCursor();
 	}
-	term.csr.on = false;
+	this.csr.on = false;
 }
 
 
 function init(){
     cvs = document.getElementById('cvs');
 	//canvas height width
-	term.t = createTerminal(cvs, 24, 80);
+    term = new terminal(cvs, 24, 80);
     //setup event handlers
     document.onkeypress = keyboardInput;
     //cvs.addEventListener('mousedown',selectEvent, false);
@@ -142,7 +142,7 @@ function init(){
     //cvs.addEventListener('mouseup',selectEvent, false);
     //draw some testing stuff
     socket.connect();
-    startCursor();
+    term.startCursor();
 }
 
 
@@ -330,17 +330,17 @@ function processEscape(msg){
 	    case 12:
 		//start and stop cursor blinking
 		if( token == 'h'){
-		    startCursor();
+		    term.startCursor();
 		}else{
-		    stopCursor();
+		    term.stopCursor();
 		}
 		break;
 	    case 25:
 		//hide show cursor
 		if( token == 'l'){
-		    stopCursor();
+		    term.stopCursor();
 		}else{
-		    startCursor();
+		    term.startCursor();
 		}
 		break;
 	    case 1049:
@@ -394,10 +394,10 @@ function processEscape(msg){
     //handle scrolling
 	if( token == 'S'){
 	    if( args.length == 0){
-	    term.t.scrollUp();
+	    term.scrollUp();
 	    }else{
 		for( var i = 0; i < args[0]; ++i){
-		    term.t.scrollUp();
+		    term.scrollUp();
 		}
 	    }
 	}else{
@@ -405,37 +405,37 @@ function processEscape(msg){
 	    var end;
 	    if( args.length == 0){
 		start = 0;
-		end = term.t.height;
+		end = term.height;
 	    }else{
 		start = args[0]-1;
 		end = args[1];
 		if( start < 0) start = 0;
-		if( end > term.t.height ) end = term.t.height;
+		if( end > term.height ) end = term.height;
 	    }
-	    term.t.setScrollRegion(start, end);
+	    term.setScrollRegion(start, end);
 	}
     }else if(token == 'J' || token == 'K'){
 	//handle region deletion
 	switch(args[0]){
 	    case 1:
 		if(token == 'J'){
-		    term.t.clearRegion(0, 0, term.t.width, term.csr.y+1);
+		    term.clearRegion(0, 0, term.width, term.csr.y+1);
 		}else{
-		    term.t.clearRegion(0, term.csr.y, term.csr.x, 1);
+		    term.clearRegion(0, term.csr.y, term.csr.x, 1);
 		}
 		break;
 	    case 2:
 		if(token == 'J'){
-		    term.t.clearRegion(0, 0, term.t.width, term.t.height);
+		    term.clearRegion(0, 0, term.width, term.height);
 		}else{
-		    term.t.clearRegion(0, term.csr.y, term.t.width, 1);
+		    term.clearRegion(0, term.csr.y, term.width, 1);
 		}
 		break;
 	    default:
 		if(token == 'J'){
-		    term.t.clearRegion(0, term.csr.y, term.t.width, term.t.height - term.csr.y);
+		    term.clearRegion(0, term.csr.y, term.width, term.height - term.csr.y);
 		}else{
-		    term.t.clearRegion(term.csr.x, term.csr.y, term.t.width - term.csr.x, 1);
+		    term.clearRegion(term.csr.x, term.csr.y, term.width - term.csr.x, 1);
 		}
 		//undef
 	}
