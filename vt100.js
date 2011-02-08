@@ -5,6 +5,8 @@ var term = undefined;
 function terminal(cnvs, height, width){
     terminal.prototype.constructor(cnvs, height, width);
     //add csr info
+    var normal-colors = ['#000000', '#800000', '#008000', '#808000', '#000080', '#800080', '#008080', '#C0C0C0'];
+    var bright-colors = ['#808080', '#FF0000', ''];
     this.csr.on = false;
     this.csr.interval = undefined;
     this.csr.blinkrate = 500;
@@ -234,9 +236,110 @@ terminal.prototype.tokenize = function( msg ){
 	    //continue tokenizeing
 	    state = 'init';
 	}else if( state == 'vt100'){
-	    
+	   switch( msg.charAt(i) ){
+		case '0':
+		case '1':
+		case '2':
+		case '3':
+		case '4':
+		case '5':
+		case '6':
+		case '7':
+		case '8':
+		case '9':
+		    token += msg.charAt(i);
+		    state = 'vt-argument';
+		break;
+		case 'f':
+		case 'H':
+		    tokenList.push( {type: 'set-attr', value : moveCursor(0,0) }); 
+		    break;
+		case 'r':
+		    tokenList.push( {type : 'set-attr', value: resetScrollRegion() } );
+		    break;
+		case 'm':
+		    tokenList.push( {type : 'set-attr', value : setDisplay() } );
+		    break;
+		case 'K':
+		case 'A':
+		case 'B':
+		case 'C':
+		case 'D':
+	    }
 	}	
     }
+}
+
+function setDisplay(args ){
+    if( args == undefined ){
+	return function(){
+	    term.text.color = undefined;
+	    term.text.bgcolor = undefined;
+	};
+    }else{
+	return function(){
+	if(args.length == 0){
+	    args[0] = 0;
+	}
+	for( idx in args ){
+	    switch(Math.floor(args[idx]/10)){
+		case 0:
+		    switch(args[idx]){
+			case 0:
+			    term.text.color = undefined;
+			    term.text.bgcolor = undefined;
+			    term.text.attr = undefined;
+			    //reset attrs
+			    break;
+			case 1:
+			    term.text.attr += 'bright';
+			    //bright
+			    break;
+			case 2:
+			    //dim
+			    break;
+			case 4:
+			    //underscore
+			    break;
+			case 5:
+			    //blink
+			    break;
+			case 7:
+			    //Reverse
+			    break;
+			case 8:
+			    //Hidden
+			    break;
+		    }
+		    break;
+		case 3:
+		    term.text.color = colors[args[idx]%10];
+		    break;
+		case 4:
+		    term.text.bgcolor = colors[args[idx]%10];
+		    break;
+		default:
+		    break;
+	    }
+		
+	};
+    }
+}
+
+function resetScrollRegion( ){
+    setScrollRegion( 0, term.height );
+}
+
+function setScrollRegion( start, end ){
+    return function(){
+	term.setScrollRegion( start, end );
+    }
+}
+
+function moveCursor(row, col){
+    return function(){
+	term.cursorTo( col, row );
+    };
 }
 
 function processEscape(msg){
