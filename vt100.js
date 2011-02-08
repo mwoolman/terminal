@@ -136,7 +136,7 @@ function init(){
 	//canvas height width
     term = new terminal(cvs, 24, 80);
     //setup event handlers
-    document.onkeypress = keyboardInput;
+    document.onkeyup = keyboardInput;
     //cvs.addEventListener('mousedown',selectEvent, false);
     //cvs.addEventListener('mousemove',selectEvent, false);
     //cvs.addEventListener('mouseup',selectEvent, false);
@@ -448,7 +448,7 @@ function processEscape(msg){
     return lastidx;   
 }
 
-var socket = new io.Socket(null, {port:8080 }); 
+var socket = new io.Socket(null, {port:8081 }); 
 
 var printBuff = [];
 var printInt = undefined;
@@ -525,6 +525,9 @@ function sendEscape(){
 function keyboardInput( ev ){
     var key = ev.keyCode;
     switch(key){
+	case 16:
+	case 17:
+	    break;//saw a shift
 	case 37:
 		term.cursorTo( term.csr.x - 1, term.csr.y);
 	    break;
@@ -545,6 +548,9 @@ function keyboardInput( ev ){
 	    break;
 	default:
 	    key = String.fromCharCode(ev.which);
+	    if( !ev.shiftKey ){
+		key = key.toLowerCase();
+	    }
 	    socket.send(key);
 	    //term.print(key);
     }
