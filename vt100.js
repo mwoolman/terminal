@@ -161,6 +161,7 @@ terminal.prototype.tokenize = function( msg ){
     var args = [];
     for( var i = 0; i < msg.length ; ++i ){
 	if( state == 'init' ){
+	    token = '';
 	    startIdx = i;
 	    switch( msg.charAt(i) ){
 		case '':
@@ -170,7 +171,8 @@ terminal.prototype.tokenize = function( msg ){
 		    token += msg.charAt(i);
 		    state = 'string';
 	    }
-	}else if( state == 'string' ){
+	}//end init
+	else if( state == 'string' ){
 	    switch( msg.charAt(i) ){
 		case '':
 		    tokenList.push({type : 'string', value : msg.substr(startIdx, i-startIdx) });
@@ -180,15 +182,59 @@ terminal.prototype.tokenize = function( msg ){
 		    break;
 		default:
 	    }
-	} else if( state == 'escape' ){
+	}//end string state 
+	else if( state == 'escape' ){
 	    switch(msg.charAt(i) ){
 		case '[' :
-		case '?' :
 		    state = 'vt100';
+		    break;
+		case '('://am basically ignoring the charset stuff
+		case ')':
+		    state = 'charset';
 		    break;
 		case ']':
 		    state = 'xterm'
+		    break;
+		case '=':
+		case '>':
+		    error("don't know how to deal with " + msg.substr(startIdx) );
+		    state = 'init';
+		    break;
 	    }
+	}//end escape
+	else if( state == 'xterm' ){
+	    switch( msg.charAt(i) ){
+		case '0':
+		case '1':
+		case '2':
+		    args.push( parseInt( msg.charAt(i) ));
+		    break;
+		case ';':
+		    state = 'xterm-str';
+		    startIdx = i+1;
+		    break;
+		default:
+		    error("saw an xterm sequence I didn't recognize " + msg.substr( startIdx ) );
+		    state = 'init';
+	    }
+	}//end of xterm
+	else if( state == 'xterm-str' ){
+	    switch( msg.charAt(i) ){
+		case '':
+		    tokenList.push({type: 'xterm', value : msg.substr(startIdx, i-startIdx), arg: args[0]});
+		    state = 'init';
+		    break;
+		default:
+		    break;
+	    }
+	}//end of xterm-str
+	else if ( state == 'charset' ){
+	    //don't really care to implement charset
+	    // this will be enough to read off one charset designator and
+	    //continue tokenizeing
+	    state = 'init';
+	}else if( state == 'vt100'){
+	    
 	}	
     }
 }
