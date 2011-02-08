@@ -137,10 +137,6 @@ function init(){
     term = new terminal(cvs, 24, 80);
     //setup event handlers
     document.onkeypress = keyboardInput;
-    //cvs.addEventListener('mousedown',selectEvent, false);
-    //cvs.addEventListener('mousemove',selectEvent, false);
-    //cvs.addEventListener('mouseup',selectEvent, false);
-    //draw some testing stuff
     socket.connect();
     term.startCursor();
 }
@@ -152,6 +148,50 @@ function error(msg){
     document.getElementById('errors').appendChild(el);
 }
 
+//create a tokenizer ideally parse stuff more correctly and
+//print stuff more efficiently
+terminal.prototype.tokenize = function( msg ){
+/*
+    states = init -> strings
+*/
+    var state = 'init';
+    var token = '';
+    var startIdx;
+    var tokenList = [];
+    var args = [];
+    for( var i = 0; i < msg.length ; ++i ){
+	if( state == 'init' ){
+	    startIdx = i;
+	    switch( msg.charAt(i) ){
+		case '':
+		    state = 'escape'
+		    break;
+		default:
+		    token += msg.charAt(i);
+		    state = 'string';
+	    }
+	}else if( state == 'string' ){
+	    switch( msg.charAt(i) ){
+		case '':
+		    tokenList.push({type : 'string', value : msg.substr(startIdx, i-startIdx) });
+		    token = '';
+		    state = 'escape';
+		    startIdx = i;
+		    break;
+		default:
+	    }
+	} else if( state == 'escape' ){
+	    switch(msg.charAt(i) ){
+		case '[' :
+		case '?' :
+		    state = 'vt100';
+		    break;
+		case ']':
+		    state = 'xterm'
+	    }
+	}	
+    }
+}
 
 function processEscape(msg){
     var state = 'invalid';
