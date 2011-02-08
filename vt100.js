@@ -105,8 +105,7 @@ function terminal(cnvs, height, width){
 	    }
 	}
 	this.clearCursor();
-	this.__proto__.csr.x = x;
-	this.__proto__.csr.y = y;
+	this.setCursor( x , y);
     };
 
     
@@ -274,34 +273,44 @@ terminal.prototype.tokenize = function( msg ){
 		case 'f':
 		case 'H':
 		    tokenList.push( {type: 'set-attr', value : cursorMoveTo(0,0), id: 'move cursor' }); 
+		    state= 'init';
 		    break;
 		case 'r':
 		    tokenList.push( {type : 'set-attr', value: resetScrollRegion(), id: 'set scroll region' } );
+		    state= 'init';
 		    break;
 		case 'm':
 		    tokenList.push( {type : 'set-attr', value : setDisplay(), id: 'set display properties' } );
+		    state= 'init';
 		    break;
 		case 'K':
 		    tokenList.push( {type: 'set-attr', value : clearLine(), id: 'clear line' } );
+		    state= 'init';
 		    break;
 		case 'J':
 		    tokenList.push( {type: 'set-attr', value: clearVert(), id: 'clear vert' } );
+		    state= 'init';
 		    break;
 		case 'S':
 		    tokenList.push( {type: 'set-attr', value: scroll(1), id: 'scroll up' } );
+		    state= 'init';
 		    break;
 		case 'A':
 		    tokenList.push( {type: 'set-attr', value : cursorMove(1,0), id: 'cursor up' } );
+		    state= 'init';
 		    break;
 		case 'B':
 		    tokenList.push( {type: 'set-attr', value : cursorMove(-1,0), id: 'cursor down' } );
+		    state= 'init';
 		    break;
 		    
 		case 'C':
 		    tokenList.push( {type: 'set-attr', value : cursorMove(0,1), id: 'cursor forward' } );
+		    state= 'init';
 		    break;
 		case 'D':
 		    tokenList.push( {type: 'set-attr', value : cursorMove(0,-1), id: 'cursor backward' } );
+		    state= 'init';
 		    break;
 		case '?':
 		    //am ignoring this for now
@@ -343,9 +352,9 @@ terminal.prototype.tokenize = function( msg ){
 		case 'H':
 		    args.push( parseInt(token) );
 		    if( args.length == 2 ){
-			tokenList.push( {type: 'set-attr', value : cursorMoveTo(args[1]-1, args[0]-1),id: 'move cursor ' });
+			tokenList.push( {type: 'set-attr', value : cursorMoveTo(args[1]-1, args[0]-1),id: 'move cursor' , args : args});
 		    } else if( args.length == 1){
-			tokenList.push( {type: 'set-attr', value : cursorMoveTo(0, args[0] -1),id: 'move cursor' });
+			tokenList.push( {type: 'set-attr', value : cursorMoveTo(0, args[0] -1),id: 'move cursor', args: args });
 		    }else{
 			error('saw too many arguments to movement token ' + msg.substr(startIdx, i-startIdx) );
 			tokenList.push( {type: 'string', value : msg.substr(startIdx, i-startIdx) } );
@@ -497,6 +506,7 @@ function clearVert( val ){
 
 function cursorMove( vert, horiz){
     return function(){
+	error(' moveing cursor here' );
 	term.cursorTo(term.csr.x + horiz, term.csr.y + vert );
     };
 }
@@ -599,20 +609,6 @@ function cursorMoveTo(col, row){
 
 var socket = new io.Socket(null, {port:8081 }); 
 
-var printBuff = [];
-var printInt = undefined;
-
-function printShit(){
-    if(printBuff.length > 1){
-	renderVt100(printBuff[0] + '\n');
-	printBuff.shift();
-    }else{
-	renderVt100(printBuff[0]);
-	clearInterval(printInt);
-	printInt = undefined;
-	printBuff.length =0;
-    }
-}
 
 function processTokens( tokens ){
     for( idx in tokens ){
@@ -622,33 +618,22 @@ function processTokens( tokens ){
 	    tokens[idx].value();
 	}else if( tokens[idx].type == 'set-attr'){
 	    tokens[idx].value();
-	    //error('saw attr token of type \'' + tokens[idx].id  + '\'');
 	}else if( tokens[idx].type == 'special-char'){
 	    tokens[idx].value();
 	}else{
 	    error('saw an unrecognized token of type \'' + tokens[idx].type + '\'');
 	}
     }
+		document.getElementById('coords').innerHTML = "x: " + term.csr.x + " y: " + term.csr.y;
 }
 
 socket.on('message', function (msg){
-    //var strs = msg.split('\n');
-    //for(line in strs){
 	if( debug ){
 	    error( 'csr x: ' + term.csr.x + ' y: ' + term.csr.y);
 	    error(msg);
 	}
 	tokens = term.tokenize(msg );
 	processTokens( tokens );
-/*	if( msg.length > 160){
-	    printBuff = msg.split('\n');
-	    printInt = setInterval(printShit, 350);
-	}else if(printInt != undefined ){
-	    printBuff.push(msg);
-	}else{
-	    renderVt100(msg);
-	}*/
-    //}
 });
 
 function enableDebug(){
