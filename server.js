@@ -46,7 +46,7 @@ send404 = function(res){
 };
 
 
-server.listen(8080);
+server.listen(8081);
 //register clients session with the client object
 
 var io = io.listen(server);

@@ -176,7 +176,7 @@ terminal.prototype.tokenize = function( msg ){
 		    state = 'escape'
 		    break;
 		default:
-		    token += msg.charAt(i);
+		    i--;
 		    state = 'string';
 	    }
 	}//end init
@@ -187,6 +187,21 @@ terminal.prototype.tokenize = function( msg ){
 		    token = '';
 		    state = 'escape';
 		    startIdx = i;
+		    break;
+		case '\n':
+		    tokenList.push( {type : 'string', value: msg.substr(startIdx, i-startIdx ) } );
+		    tokenList.push( {type : 'special-char', value: function() {term.newline(); } } );
+		    state = 'init';
+		    break;
+		case '':
+		    tokenList.push( {type : 'string', value: msg.substr(startIdx, i-startIdx ) } );
+		    tokenList.push( {type : 'special-char', value: function(){term.backspace(); }} );
+		    state = 'init';
+		    break;
+		case '\r':
+		    tokenList.push( {type : 'string', value: msg.substr(startIdx, i-startIdx ) } );
+		    tokenList.push( {type : 'special-char', value: function(){term.cr(); }} );
+		    state = 'init';
 		    break;
 		default:
 	    }
@@ -258,35 +273,35 @@ terminal.prototype.tokenize = function( msg ){
 		break;
 		case 'f':
 		case 'H':
-		    tokenList.push( {type: 'set-attr', value : moveCursor(0,0) }); 
+		    tokenList.push( {type: 'set-attr', value : cursorMoveTo(0,0), id: 'move cursor' }); 
 		    break;
 		case 'r':
-		    tokenList.push( {type : 'set-attr', value: resetScrollRegion() } );
+		    tokenList.push( {type : 'set-attr', value: resetScrollRegion(), id: 'set scroll region' } );
 		    break;
 		case 'm':
-		    tokenList.push( {type : 'set-attr', value : setDisplay() } );
+		    tokenList.push( {type : 'set-attr', value : setDisplay(), id: 'set display properties' } );
 		    break;
 		case 'K':
-		    tokenList.push( {type: 'set-attr', value : clearLine() } );
+		    tokenList.push( {type: 'set-attr', value : clearLine(), id: 'clear line' } );
 		    break;
 		case 'J':
-		    tokenList.push( {type: 'set-attr', value: clearVert()} );
+		    tokenList.push( {type: 'set-attr', value: clearVert(), id: 'clear vert' } );
 		    break;
 		case 'S':
-		    tokenList.push( {type: 'set-attr', value: scroll(1) } );
+		    tokenList.push( {type: 'set-attr', value: scroll(1), id: 'scroll up' } );
 		    break;
 		case 'A':
-		    tokenList.push( {type: 'set-attr', value : cursorMove(1,0) } );
+		    tokenList.push( {type: 'set-attr', value : cursorMove(1,0), id: 'cursor up' } );
 		    break;
 		case 'B':
-		    tokenList.push( {type: 'set-attr', value : cursorMove(-1,0) } );
+		    tokenList.push( {type: 'set-attr', value : cursorMove(-1,0), id: 'cursor down' } );
 		    break;
 		    
 		case 'C':
-		    tokenList.push( {type: 'set-attr', value : cursorMove(0,1) } );
+		    tokenList.push( {type: 'set-attr', value : cursorMove(0,1), id: 'cursor forward' } );
 		    break;
 		case 'D':
-		    tokenList.push( {type: 'set-attr', value : cursorMove(0,-1) } );
+		    tokenList.push( {type: 'set-attr', value : cursorMove(0,-1), id: 'cursor backward' } );
 		    break;
 		case '?':
 		    //am ignoring this for now
@@ -328,9 +343,9 @@ terminal.prototype.tokenize = function( msg ){
 		case 'H':
 		    args.push( parseInt(token) );
 		    if( args.length == 2 ){
-			tokenList.push( {type: 'set-attr', value : moveCursor(args[1]-1, args[0]-1) });
+			tokenList.push( {type: 'set-attr', value : cursorMoveTo(args[1]-1, args[0]-1),id: 'move cursor ' });
 		    } else if( args.length == 1){
-			tokenList.push( {type: 'set-attr', value : moveCursor(0, args[0] -1) });
+			tokenList.push( {type: 'set-attr', value : cursorMoveTo(0, args[0] -1),id: 'move cursor' });
 		    }else{
 			error('saw too many arguments to movement token ' + msg.substr(startIdx, i-startIdx) );
 			tokenList.push( {type: 'string', value : msg.substr(startIdx, i-startIdx) } );
@@ -340,9 +355,9 @@ terminal.prototype.tokenize = function( msg ){
 		case 'r':
 		    args.push( parseInt(token) );
 		    if( args.length == 2 ){
-			tokenList.push( {type : 'set-attr', value: setScrollRegion(args[0], args[1]) } );
+			tokenList.push( {type : 'set-attr', value: setScrollRegion(args[0], args[1]), id: 'set scroll region' } );
 		    }else if( args.length == 1){
-			tokenList.push( {type : 'set-attr', value: setScrollRegion(args[0]) } );
+			tokenList.push( {type : 'set-attr', value: setScrollRegion(args[0]), id: 'set scroll region' } );
 		    }else{
 			error('saw too many arguments to scroll region token ' + msg.substr(startIdx, i-startIdx) );
 			tokenList.push( {type: 'string', value : msg.substr(startIdx, i-startIdx) } );
@@ -351,13 +366,13 @@ terminal.prototype.tokenize = function( msg ){
 		    break;
 		case 'm':
 		    args.push( parseInt(token) );
-		    tokenList.push( {type : 'set-attr', value : setDisplay(args) } );
+		    tokenList.push( {type : 'set-attr', value : setDisplay(args), id: 'set display ' + args } );
 		    state = 'init';
 		    break;
 		case 'K':
 		    args.push( parseInt(token) );
 		    if( args.length == 1 ){
-			tokenList.push( {type: 'set-attr', value : clearLine(args[0]) } );
+			tokenList.push( {type: 'set-attr', value : clearLine(args[0]), id: 'clear Line' } );
 		    }else{
 			error('saw too many arguments to line clear token ' + msg.substr(startIdx, i-startIdx) );
 			tokenList.push( {type: 'string', value : msg.substr(startIdx, i-startIdx) } );
@@ -367,7 +382,7 @@ terminal.prototype.tokenize = function( msg ){
 		case 'J':
 		    args.push( parseInt(token) );
 		    if( args.length == 1 ){
-		    tokenList.push( {type: 'set-attr', value: clearVert(args[0])} );
+		    tokenList.push( {type: 'set-attr', value: clearVert(args[0]), id: 'clear vert'} );
 		    }else{
 			error('saw too many arguments to vertical clear token ' + msg.substr(startIdx, i-startIdx) );
 			tokenList.push( {type: 'string', value : msg.substr(startIdx, i-startIdx) } );
@@ -377,7 +392,7 @@ terminal.prototype.tokenize = function( msg ){
 		case 'S':
 		    args.push( parseInt(token) );
 		    if( args.length == 1 ){
-		    tokenList.push( {type: 'set-attr', value: scroll(args[0]) } );
+		    tokenList.push( {type: 'set-attr', value: scroll(args[0]), id: 'scroll up' } );
 		    }else{
 			error('saw too many arguments to scroll clear token ' + msg.substr(startIdx, i-startIdx) );
 			tokenList.push( {type: 'string', value : msg.substr(startIdx, i-startIdx) } );
@@ -387,7 +402,7 @@ terminal.prototype.tokenize = function( msg ){
 		case 'A':
 		    args.push( parseInt(token) );
 		    if( args.length == 1 ){
-			tokenList.push( {type: 'set-attr', value : cursorMove(args[0],0) } );
+			tokenList.push( {type: 'set-attr', value : cursorMove(args[0],0), id : 'cursor up' } );
 		    }else{
 			error('saw too many arguments to a move up token ' + msg.substr(startIdx, i-startIdx) );
 			tokenList.push( {type: 'string', value : msg.substr(startIdx, i-startIdx) } );
@@ -397,7 +412,7 @@ terminal.prototype.tokenize = function( msg ){
 		case 'B':
 		    args.push( parseInt(token) );
 		    if( args.length == 1 ){
-			tokenList.push( {type: 'set-attr', value : cursorMove(-args[0],0) } );
+			tokenList.push( {type: 'set-attr', value : cursorMove(-args[0],0), id: 'cursor down' } );
 		    }else{
 			error('saw too many arguments to move down token ' + msg.substr(startIdx, i-startIdx) );
 			tokenList.push( {type: 'string', value : msg.substr(startIdx, i-startIdx) } );
@@ -407,7 +422,7 @@ terminal.prototype.tokenize = function( msg ){
 		case 'C':
 		    args.push( parseInt(token) );
 		    if( args.length == 1 ){
-			tokenList.push( {type: 'set-attr', value : cursorMove(0,args[0]) } );
+			tokenList.push( {type: 'set-attr', value : cursorMove(0,args[0]), id: 'cursor forward' } );
 		    }else{
 			error('saw too many arguments to a move forward token ' + msg.substr(startIdx, i-startIdx) );
 			tokenList.push( {type: 'string', value : msg.substr(startIdx, i-startIdx) } );
@@ -417,7 +432,7 @@ terminal.prototype.tokenize = function( msg ){
 		case 'D':
 		    args.push( parseInt(token) );
 		    if( args.length == 1 ){
-			tokenList.push( {type: 'set-attr', value : cursorMove(0,-args[0]) } );
+			tokenList.push( {type: 'set-attr', value : cursorMove(0,-args[0]), id: 'cursor backward' } );
 		    }else{
 			error('saw too many arguments to move backward ' + msg.substr(startIdx, i-startIdx) );
 			tokenList.push( {type: 'string', value : msg.substr(startIdx, i-startIdx) } );
@@ -430,6 +445,9 @@ terminal.prototype.tokenize = function( msg ){
 	    error( 'in an unrecognized state ' + state );
 	}
     }//end for
+    if( state == 'string' ){
+	tokenList.push({type: 'string' , value : msg.substr(startIdx ) } );
+    }
     return tokenList;
 }//end of tokenize
 
@@ -479,7 +497,7 @@ function clearVert( val ){
 
 function cursorMove( vert, horiz){
     return function(){
-	term.cursorTo(this.csr.x + horiz, this.csr.y + vert );
+	term.cursorTo(term.csr.x + horiz, term.csr.y + vert );
     };
 }
 
@@ -549,7 +567,7 @@ function setDisplay(args ){
 			term.text.color = term.colors[args[idx]%10];
 			break;
 		    case 4:
-			term.text.bgcolor = colors[args[idx]%10];
+			term.text.bgcolor = term.colors[args[idx]%10];
 			break;
 		    default:
 			break;
@@ -572,308 +590,14 @@ function setScrollRegion( start, end ){
     };
 }
 
-function moveCursor(row, col){
+function cursorMoveTo(col, row){
     return function(){
 	term.cursorTo( col, row );
     };
 }
 
-function processEscape(msg){
-    var state = 'invalid';
-    var token = '';
-    var args = [];
-    var lastidx = 0;
-    for( var idx in msg.split('')){
-	switch(msg.charAt(idx)){
-		case '':
-			if(state.substr(0,5) == 'xterm'){
-				state = 'done';
-				args.push(token);
-				token = 'xterm';
-			}else{
-				token += msg.charAt(idx);
-			}
-			break;
-		case ']': 
-			state='xterm-id';
-			break;
-	    case '[':
-	    case '?':
-			state = 'vt100';
-			break;
-	    case '(':
-	    case ')':
-			state = 'vt100-charset';
-			break;
-	    case '0':
-	    case '1':
-	    case '2':
-		if( state == 'vt100-charset'){
-		    state = 'done'
-		    token = 'alt-charset'
-		    break;
-		}
-	    case '3':
-	    case '4':
-	    case '5':
-	    case '6':
-	    case '7':
-	    case '8':
-	    case '9':
-		token += msg.charAt(idx);
-		break;
-	    case ';':
-		if( state == 'vt100'){
-			args.push(parseInt(token));
-			token = '';
-		}else if(state == 'xterm-id'){
-			switch(token){
-				case "0":
-					args.push('title-icon');//should be both icon and title
-					break;
-				case "1":
-					args.push('icon');
-					break;
-				case '2':
-					args.push('title');
-					break;
-				default:
-					state = 'done';
-					break;
-			}
-			token = '';
-			if(state != 'done'){
-				state = 'xterm-str';
-			}
-		}else{
-			token += msg.charAt(idx);
-		}
-		break;
-		case 'A':
-		case 'B':
-		if( state ==  'vt100-charset'){
-		    state = 'done';
-		    token = 'alt-charset';
-		    break;
-		}
-		// cursor movement
-		case 'f':
-		case 'H':
-		case 'C':
-		case 'D':
-		    //erasing text
-		case 'J':
-		case 'K':
-		//csi codes for doing stuff to cursor
-		case 'h':
-		case 'l':
-		//scroll region
-		case 'r':
-		case 'S':
-		//display modes
-		case 'm':
-		if( state == 'vt100'){
-			state = 'done';
-			args.push(parseInt(token));
-			token = msg.charAt(idx);
-		}else{//otherwise xterm
-			token += msg.charAt(idx);
-		}
-		break;	
-	    default:
-			if(state == 'xterm-str'){
-				token += msg.charAt(idx);
-			}else{
-				error('invalid state reached at char ' + msg.charCodeAt(idx));
-				error('msg: ' + msg);
-				token = '';
-				state = 'done';
-			}
-			break;
-	}
-	if( state == 'done' ){
-	    lastidx = Number(idx)+1;
-	    break;
-	}
-    }
-    if( args[0] != args[0]){
-	args.length = 0;
-    }
-  //  error('seen escape ' + token);
-    if( token == 'm'){
-    //error('seen m token ' + args );
-	var colors = ['black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white'];
-	if(args.length == 0){
-	    args[0] = 0;
-	}
-	for( idx in args ){
-	    switch(Math.floor(args[idx]/10)){
-		case 0:
-		    switch(args[idx]){
-			case 0:
-			    term.text.color = undefined;
-			    term.text.bgcolor = undefined;
-			    term.text.attr = undefined;
-			    //reset attrs
-			    break;
-			case 1:
-			    term.text.attr += 'bright';
-			    //bright
-			    break;
-			case 2:
-			    //dim
-			    break;
-			case 4:
-			    //underscore
-			    break;
-			case 5:
-			    //blink
-			    break;
-			case 7:
-			    //Reverse
-			    break;
-			case 8:
-			    //Hidden
-			    break;
-		    }
-		    break;
-		case 3:
-		    term.text.color = colors[args[idx]%10];
-		    break;
-		case 4:
-		    term.text.bgcolor = colors[args[idx]%10];
-		    break;
-		default:
-		    break;
-	    }
-	}
-    }else if(token == 'alt-charset'){
-	//do nothing yet just want to parse out the character set
-    }else if(token == 'h' || token == 'l'){
-    //handle cursor blinking and showing
-	switch(args[0]){
-	    case 12:
-		//start and stop cursor blinking
-		if( token == 'h'){
-		    term.startCursor();
-		}else{
-		    term.stopCursor();
-		}
-		break;
-	    case 25:
-		//hide show cursor
-		if( token == 'l'){
-		    term.stopCursor();
-		}else{
-		    term.startCursor();
-		}
-		break;
-	    case 1049:
-		    //ignoring this till I work out what alternative screen buffer is
-		break;
-	}
-    }else if("HABCDf".indexOf(token) >= 0){
-    //handle cursor motion
-	switch(token){
-	    case 'H':
-	    case 'f':
-		if( args.length == 0){
-		    term.cursorTo(0,0);   
-		}else if( args.length == 1 ){
-		    term.cursorTo(0,args[0]-1);
-		}else{
-		    term.cursorTo(args[1]-1, args[0]-1);
-		}
-		break;
-	    case 'A':
-		if(args.length == 0 ){
-		    term.cursorTo(term.csr.x - 1, term.csr.y);
-		}else{
-		    term.cursorTo(term.csr.x - args[0], term.csr.y);
-		}
-	    break;
-	    case 'B':
-		if(args.length == 0 ){
-		    term.cursorTo(term.csr.x + 1, term.csr.y);
-		}else{
-		    term.cursorTo(term.csr.x + args[0], term.csr.y);
-		}
-	    break;
-	    case 'C':
-		if(args.length == 0 ){
-		    term.cursorTo(term.csr.x, term.csr.y -1);
-		}else{
-		    term.cursorTo(term.csr.x, term.csr.y - args[0]);
-		}
-	    break;
-	    case 'D':
-		if(args.length == 0 ){
-		    term.cursorTo(term.csr.x, term.csr.y +1);
-		}else{
-		    term.cursorTo(term.csr.x, term.csr.y + args[0]);
-		}
-	    break;
 
-	}
-    } else if(token == 'r' || token =='S'){
-    //handle scrolling
-	if( token == 'S'){
-	    if( args.length == 0){
-	    term.scrollUp();
-	    }else{
-		for( var i = 0; i < args[0]; ++i){
-		    term.scrollUp();
-		}
-	    }
-	}else{
-	    var start;
-	    var end;
-	    if( args.length == 0){
-		start = 0;
-		end = term.height;
-	    }else{
-		start = args[0]-1;
-		end = args[1];
-		if( start < 0) start = 0;
-		if( end > term.height ) end = term.height;
-	    }
-	    term.setScrollRegion(start, end);
-	}
-    }else if(token == 'J' || token == 'K'){
-	//handle region deletion
-	switch(args[0]){
-	    case 1:
-		if(token == 'J'){
-		    term.clearRegion(0, 0, term.width, term.csr.y+1);
-		}else{
-		    term.clearRegion(0, term.csr.y, term.csr.x, 1);
-		}
-		break;
-	    case 2:
-		if(token == 'J'){
-		    term.clearRegion(0, 0, term.width, term.height);
-		}else{
-		    term.clearRegion(0, term.csr.y, term.width, 1);
-		}
-		break;
-	    default:
-		if(token == 'J'){
-		    term.clearRegion(0, term.csr.y, term.width, term.height - term.csr.y);
-		}else{
-		    term.clearRegion(term.csr.x, term.csr.y, term.width - term.csr.x, 1);
-		}
-		//undef
-	}
-    //handle xterm
-    }else if( token == 'xterm'){
-		if(args[0].substr(0,5) == 'title'){
-			document.title = args[1];
-		}
-    }
-    return lastidx;   
-}
-
-var socket = new io.Socket(null, {port:8080 }); 
+var socket = new io.Socket(null, {port:8081 }); 
 
 var printBuff = [];
 var printInt = undefined;
@@ -893,11 +617,16 @@ function printShit(){
 function processTokens( tokens ){
     for( idx in tokens ){
 	if( tokens[idx].type == 'string' ){
-	    term.print( tokens[idx].value;
+	    term.print( tokens[idx].value );
 	}else if( tokens[idx].type == 'xterm' ){
 	    tokens[idx].value();
 	}else if( tokens[idx].type == 'set-attr'){
 	    tokens[idx].value();
+	    //error('saw attr token of type \'' + tokens[idx].id  + '\'');
+	}else if( tokens[idx].type == 'special-char'){
+	    tokens[idx].value();
+	}else{
+	    error('saw an unrecognized token of type \'' + tokens[idx].type + '\'');
 	}
     }
 }
@@ -930,28 +659,6 @@ function disableDebug(){
     debug = false;
 }
 
-function renderVt100(msg){
-    if(msg == undefined){return;}
-    for(var i = 0; i < msg.length; i++){
-	var curr = msg.charAt(i);
-	if( msg.charAt(i) == '' ){
-	    //error("msg is : " + msg );
-	    //error("i is " + i + " before processing Escape");
-	    i += Number( processEscape(msg.substr(i+1)));
-	    var newcurr = msg.charAt(i);
-	    //error("i is " + i + " after processing Escape");
-	}else if(msg.charAt(i) == '\n'){
-	    term.newline();
-	}else if(msg.charAt(i) == ''){
-	    term.backspace();
-	}else if(msg.charAt(i) == '\r'){
-	    term.cr();
-	}else{
-	term.print(msg.charAt(i));
-	}
-    }
-    //term.newline();
-}
 
 function sendbackspace(){
 	    socket.send('');
