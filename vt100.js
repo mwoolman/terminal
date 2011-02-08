@@ -5,14 +5,22 @@ var term = undefined;
 function terminal(cnvs, height, width){
     terminal.prototype.constructor(cnvs, height, width);
     //add csr info
-    var normal-colors = ['#000000', '#800000', '#008000', '#808000', '#000080', '#800080', '#008080', '#C0C0C0'];
-    var bright-colors = ['#808080', '#FF0000', ''];
+    var normalColors = ['#000000', '#800000', '#008000', '#808000', '#000080', '#800080', '#008080', '#C0C0C0'];
+    var brightColors = ['#808080', '#FF0000', '#00FF00', '#FFFF00', '#0000FF', '#FF00FF', '#00FFFF', '#FFFFFF' ];
+    this.colors = normalColors;
     this.csr.on = false;
     this.csr.interval = undefined;
     this.csr.blinkrate = 500;
     //add text stuff
     this.text = {bgcolor : undefined, color : undefined };
     //members
+    this.setBright = function(){
+	this.colors = brightColors;
+    }
+    this.setDark = function(){
+	this.colors = normalColors;
+    }
+    //cursor
     this.drawCursor = function(){
 	var x = this.csr.x;
 	var y = this.csr.y;
@@ -153,9 +161,6 @@ function error(msg){
 //create a tokenizer ideally parse stuff more correctly and
 //print stuff more efficiently
 terminal.prototype.tokenize = function( msg ){
-/*
-    states = init -> strings
-*/
     var state = 'init';
     var token = '';
     var startIdx;
@@ -164,6 +169,7 @@ terminal.prototype.tokenize = function( msg ){
     for( var i = 0; i < msg.length ; ++i ){
 	if( state == 'init' ){
 	    token = '';
+	    args = [];
 	    startIdx = i;
 	    switch( msg.charAt(i) ){
 		case '':
@@ -223,7 +229,7 @@ terminal.prototype.tokenize = function( msg ){
 	else if( state == 'xterm-str' ){
 	    switch( msg.charAt(i) ){
 		case '':
-		    tokenList.push({type: 'xterm', value : msg.substr(startIdx, i-startIdx), arg: args[0]});
+		    tokenList.push({type: 'xterm', value : processXterm( msg.substr(startIdx, i-startIdx), args[0]) });
 		    state = 'init';
 		    break;
 		default:
@@ -261,15 +267,244 @@ terminal.prototype.tokenize = function( msg ){
 		    tokenList.push( {type : 'set-attr', value : setDisplay() } );
 		    break;
 		case 'K':
+		    tokenList.push( {type: 'set-attr', value : clearLine() } );
+		    break;
+		case 'J':
+		    tokenList.push( {type: 'set-attr', value: clearVert()} );
+		    break;
+		case 'S':
+		    tokenList.push( {type: 'set-attr', value: scroll(1) } );
+		    break;
 		case 'A':
+		    tokenList.push( {type: 'set-attr', value : cursorMove(1,0) } );
+		    break;
 		case 'B':
+		    tokenList.push( {type: 'set-attr', value : cursorMove(-1,0) } );
+		    break;
+		    
 		case 'C':
+		    tokenList.push( {type: 'set-attr', value : cursorMove(0,1) } );
+		    break;
 		case 'D':
+		    tokenList.push( {type: 'set-attr', value : cursorMove(0,-1) } );
+		    break;
+		case '?':
+		    //am ignoring this for now
+		    state = 'hide-show';
+		    break;
+		
+		}
+	}//end of vt100
+	else if( state == 'hide-show' ){
+	    switch( msg.charAt(i) ){
+		case 'h':
+		case 'l':
+		    state = 'init';
+		break;
+		default:
+		    //TODO: don't discard this token
+		    break;
 	    }
-	}	
-    }
+	}//end of hide-show
+	else if( state == 'vt-argument' ){
+	    switch( msg.charAt(i) ){
+		case ';':
+		    args.push(parseInt(token));
+		    token = '';
+		    break;
+		case '0':
+		case '1':
+		case '2':
+		case '3':
+		case '4':
+		case '5':
+		case '6':
+		case '7':
+		case '8':
+		case '9':
+		    token += msg.charAt(i);
+		    break;
+		case 'f':
+		case 'H':
+		    args.push( parseInt(token) );
+		    if( args.length == 2 ){
+			tokenList.push( {type: 'set-attr', value : moveCursor(args[1]-1, args[0]-1) });
+		    } else if( args.length == 1){
+			tokenList.push( {type: 'set-attr', value : moveCursor(0, args[0] -1) });
+		    }else{
+			error('saw too many arguments to movement token ' + msg.substr(startIdx, i-startIdx) );
+			tokenList.push( {type: 'string', value : msg.substr(startIdx, i-startIdx) } );
+		    } 
+		    state = 'init';
+		    break;
+		case 'r':
+		    args.push( parseInt(token) );
+		    if( args.length == 2 ){
+			tokenList.push( {type : 'set-attr', value: setScrollRegion(args[0], args[1]) } );
+		    }else if( args.length == 1){
+			tokenList.push( {type : 'set-attr', value: setScrollRegion(args[0]) } );
+		    }else{
+			error('saw too many arguments to scroll region token ' + msg.substr(startIdx, i-startIdx) );
+			tokenList.push( {type: 'string', value : msg.substr(startIdx, i-startIdx) } );
+		    }
+		    state = 'init';
+		    break;
+		case 'm':
+		    args.push( parseInt(token) );
+		    tokenList.push( {type : 'set-attr', value : setDisplay(args) } );
+		    state = 'init';
+		    break;
+		case 'K':
+		    args.push( parseInt(token) );
+		    if( args.length == 1 ){
+			tokenList.push( {type: 'set-attr', value : clearLine(args[0]) } );
+		    }else{
+			error('saw too many arguments to line clear token ' + msg.substr(startIdx, i-startIdx) );
+			tokenList.push( {type: 'string', value : msg.substr(startIdx, i-startIdx) } );
+		    }
+		    state = 'init';
+		    break;
+		case 'J':
+		    args.push( parseInt(token) );
+		    if( args.length == 1 ){
+		    tokenList.push( {type: 'set-attr', value: clearVert(args[0])} );
+		    }else{
+			error('saw too many arguments to vertical clear token ' + msg.substr(startIdx, i-startIdx) );
+			tokenList.push( {type: 'string', value : msg.substr(startIdx, i-startIdx) } );
+		    }
+		    state = 'init';
+		    break;
+		case 'S':
+		    args.push( parseInt(token) );
+		    if( args.length == 1 ){
+		    tokenList.push( {type: 'set-attr', value: scroll(args[0]) } );
+		    }else{
+			error('saw too many arguments to scroll clear token ' + msg.substr(startIdx, i-startIdx) );
+			tokenList.push( {type: 'string', value : msg.substr(startIdx, i-startIdx) } );
+		    }
+		    state = 'init';
+		    break;
+		case 'A':
+		    args.push( parseInt(token) );
+		    if( args.length == 1 ){
+			tokenList.push( {type: 'set-attr', value : cursorMove(args[0],0) } );
+		    }else{
+			error('saw too many arguments to a move up token ' + msg.substr(startIdx, i-startIdx) );
+			tokenList.push( {type: 'string', value : msg.substr(startIdx, i-startIdx) } );
+		    }
+		    state = 'init';
+		    break;
+		case 'B':
+		    args.push( parseInt(token) );
+		    if( args.length == 1 ){
+			tokenList.push( {type: 'set-attr', value : cursorMove(-args[0],0) } );
+		    }else{
+			error('saw too many arguments to move down token ' + msg.substr(startIdx, i-startIdx) );
+			tokenList.push( {type: 'string', value : msg.substr(startIdx, i-startIdx) } );
+		    }
+		    state = 'init';
+		    break;
+		case 'C':
+		    args.push( parseInt(token) );
+		    if( args.length == 1 ){
+			tokenList.push( {type: 'set-attr', value : cursorMove(0,args[0]) } );
+		    }else{
+			error('saw too many arguments to a move forward token ' + msg.substr(startIdx, i-startIdx) );
+			tokenList.push( {type: 'string', value : msg.substr(startIdx, i-startIdx) } );
+		    }
+		    state = 'init';
+		    break;
+		case 'D':
+		    args.push( parseInt(token) );
+		    if( args.length == 1 ){
+			tokenList.push( {type: 'set-attr', value : cursorMove(0,-args[0]) } );
+		    }else{
+			error('saw too many arguments to move backward ' + msg.substr(startIdx, i-startIdx) );
+			tokenList.push( {type: 'string', value : msg.substr(startIdx, i-startIdx) } );
+		    }
+		    state = 'init';
+		    break;
+	    }
+	}//end vt-argument	
+	else{
+	    error( 'in an unrecognized state ' + state );
+	}
+    }//end for
+    return tokenList;
+}//end of tokenize
+
+function processXterm( str, option ){
+    return function(){
+	if( option == 0 ){
+	    document.title = str;
+	}//ignore other possibilities
+    };
 }
 
+function scroll( val ){
+    return function() {
+	if( val < 0 ){
+	    while( val < 0 ){
+		term.scrollDown();
+		val++;
+	    }
+	}else{
+	    while( val > 0 ){
+		term.scrollUp();
+		val--;
+	    }
+	}
+	
+    };
+}
+
+function clearVert( val ){
+    if( val == undefined){
+	val = 0;
+    }
+    return function(){
+	switch( val ){
+	    case 0:
+		term.clearRegion(0, term.csr.y, term.width, term.height - term.csr.y);
+		break;
+	    case 1:
+		term.clearRegion(0, 0, term.width, term.csr.y);
+		break;
+	    case 2:
+		term.clearRegion(0,0, term.width, term.height);
+		break;
+	}	
+    };
+}
+
+function cursorMove( vert, horiz){
+    return function(){
+	term.cursorTo(this.csr.x + horiz, this.csr.y + vert );
+    };
+}
+
+function clearLine( val ){
+    if( val == undefined ){
+	val = 0;
+    }   
+    return function(){
+	switch( val ){
+	    case 0:
+		term.clearRegion( term.csr.x, term.csr.y, term.width - term.csr.x, 1 );
+		break;
+	    case 1:
+		term.clearRegion( 0, term.csr.y, term.csr.x, 1 );
+		break;
+	    case 2:
+		term.clearRegion(0, term.csr.y, term.width, 1);
+		break;
+	    default:
+		error('saw invalid parameter to clear line \'' + val + '\'' );
+	}
+    };
+}
+
+    
 function setDisplay(args ){
     if( args == undefined ){
 	return function(){
@@ -278,62 +513,63 @@ function setDisplay(args ){
 	};
     }else{
 	return function(){
-	if(args.length == 0){
-	    args[0] = 0;
-	}
-	for( idx in args ){
-	    switch(Math.floor(args[idx]/10)){
-		case 0:
-		    switch(args[idx]){
-			case 0:
-			    term.text.color = undefined;
-			    term.text.bgcolor = undefined;
-			    term.text.attr = undefined;
-			    //reset attrs
-			    break;
-			case 1:
-			    term.text.attr += 'bright';
-			    //bright
-			    break;
-			case 2:
-			    //dim
-			    break;
-			case 4:
-			    //underscore
-			    break;
-			case 5:
-			    //blink
-			    break;
-			case 7:
-			    //Reverse
-			    break;
-			case 8:
-			    //Hidden
-			    break;
-		    }
-		    break;
-		case 3:
-		    term.text.color = colors[args[idx]%10];
-		    break;
-		case 4:
-		    term.text.bgcolor = colors[args[idx]%10];
-		    break;
-		default:
-		    break;
-	    }
-		
-	};
+	    for( idx in args ){
+		switch(Math.floor(args[idx]/10)){
+		    case 0:
+			switch(args[idx]){
+			    case 0:
+				term.text.color = undefined;
+				term.text.bgcolor = undefined;
+				term.text.attr = undefined;
+				//reset attrs
+				break;
+			    case 1:
+				term.setBright();
+				//bright
+				break;
+			    case 2:
+				term.setDark();
+				//dim
+				break;
+			    case 4:
+				//underscore
+				break;
+			    case 5:
+				//blink
+				break;
+			    case 7:
+				//Reverse
+				break;
+			    case 8:
+				//Hidden
+				break;
+			}
+			break;
+		    case 3:
+			term.text.color = term.colors[args[idx]%10];
+			break;
+		    case 4:
+			term.text.bgcolor = colors[args[idx]%10];
+			break;
+		    default:
+			break;
+		}//end switch
+	    }//end for
+	};//end function
     }
 }
 
 function resetScrollRegion( ){
-    setScrollRegion( 0, term.height );
+    return setScrollRegion( 0, term.height );
 }
 
 function setScrollRegion( start, end ){
+    if( end == undefined ){
+	end == term.height;
+    }
     return function(){
 	term.setScrollRegion( start, end );
-    }
+    };
 }
 
 function moveCursor(row, col){
@@ -654,6 +890,18 @@ function printShit(){
     }
 }
 
+function processTokens( tokens ){
+    for( idx in tokens ){
+	if( tokens[idx].type == 'string' ){
+	    term.print( tokens[idx].value;
+	}else if( tokens[idx].type == 'xterm' ){
+	    tokens[idx].value();
+	}else if( tokens[idx].type == 'set-attr'){
+	    tokens[idx].value();
+	}
+    }
+}
+
 socket.on('message', function (msg){
     //var strs = msg.split('\n');
     //for(line in strs){
@@ -661,14 +909,16 @@ socket.on('message', function (msg){
 	    error( 'csr x: ' + term.csr.x + ' y: ' + term.csr.y);
 	    error(msg);
 	}
-	if( msg.length > 160){
+	tokens = term.tokenize(msg );
+	processTokens( tokens );
+/*	if( msg.length > 160){
 	    printBuff = msg.split('\n');
 	    printInt = setInterval(printShit, 350);
 	}else if(printInt != undefined ){
 	    printBuff.push(msg);
 	}else{
 	    renderVt100(msg);
-	}
+	}*/
     //}
 });
 
