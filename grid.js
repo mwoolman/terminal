@@ -45,12 +45,13 @@ function terminalGrid( cnvs, height, width ){
 	    }
 	};
 	//cursor Fuctions
-	this.drawBlock =  function(x, y, color ){
+
+	this.drawRegion = function (x, y, width, height, color ){
 	    if( this.__proto__ instanceof terminalGrid ){
-		this.__proto__.drawBlock(x, y, color);
+		this.__proto__.drawRegion(x, y, width, height, color);
 	    }else{
-		if( color == undefined){
-			color = this.text.color;
+		if( color == undefined ){
+		    color = this.text.color;
 		}
 		if( y == undefined){
 			y = this.csr.y;
@@ -58,13 +59,13 @@ function terminalGrid( cnvs, height, width ){
 		if( x == undefined){
 			x  = this.csr.x;
 		}
-		if( color == 'blue' ){
-		}
 		this.ctx.save();
 		this.ctx.fillStyle = color;
-		this.ctx.fillRect(x*this.text.width, y * this.text.height, this.text.width, this.text.height);
+		this.ctx.fillRect( x* this.text.width, y * this.text.height, this.text.width * width, this.text.height * height );
 		this.ctx.restore();
+
 	    }
+	    
 	};
 
 	this.clearRegion =  function(x,y, width, height){
@@ -96,6 +97,37 @@ function terminalGrid( cnvs, height, width ){
 		this.clearRegion(x, y, 1, 1);
 	    }
 	};
+	
+	this.writeStr = function( str, x, y, color ){
+	    if( this.__proto__ instanceof terminalGrid ){
+		this.__proto__.writeStr( str, x,y, color );
+	    }else{
+		if(color == undefined ) {
+		color = this.text.color;
+		}
+		if(x == undefined){
+		     x = this.csr.x;
+		}
+		if(y == undefined){
+		    y = this.csr.y;
+		}
+
+		this.ctx.save();
+		//set up context
+		this.ctx.font = this.text.font;
+		this.ctx.fillStyle = color;
+		this.ctx.textBaseline = 'top';
+		//save stuff to text buffer
+		for( var i = 0; i < str.length; ++i ){
+		    this.textBuffer[y][x+i] = str.charAt(i);
+		}
+		//render text
+		this.ctx.fillText( str, x*this.text.width, y*this.text.height );
+		this.ctx.restore();
+
+	    }
+	}
+	
 	//character functions
 	this.writeChar =  function( ch, x, y, color ){
 	    if( this.__proto__ instanceof terminalGrid ){
@@ -133,7 +165,6 @@ function terminalGrid( cnvs, height, width ){
 			this.csr.y++;
 		}
 		if(this.csr.y >= this.height){
-		    error('reduces y by 1');
 		    this.csr.y--;
 		    this.scrollUp();
 		}
