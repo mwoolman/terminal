@@ -133,6 +133,7 @@ function terminalGrid( cnvs, height, width ){
 			this.csr.y++;
 		}
 		if(this.csr.y >= this.height){
+		    error('reduces y by 1');
 		    this.csr.y--;
 		    this.scrollUp();
 		}
