@@ -42,6 +42,9 @@ function terminal(cnvs, height, width){
 	}
 	this.csr.on = !this.csr.on;
     };
+    this.drawBlock =  function(x, y, color ){
+	    this.drawRegion( x, y, 1, 1, color);
+    };
     //print
     this.print = function (msg, color){
 	if( msg == undefined ){
@@ -53,12 +56,17 @@ function terminal(cnvs, height, width){
 	this.clearCursor();
 	var x = this.csr.x;
 	var y = this.csr.y;
-	for( i = 0; i < msg.length; ++i ){
-		if( this.text.bgcolor != undefined ){
-		    this.drawBlock(x+i, y, this.text.bgcolor);
-		}
-		this.writeChar( msg.charAt(i), x+i, y, color );
+	if( x + msg.length > this.width ){
+	    this.print(msg.substr(0, this.width-x));
+	    this.print(msg.substr(this.width-x));
+	}else{
+	    if( this.text.bgcolor != undefined ){
+		this.drawRegion(x, y, msg.length, 1, this.text.bgcolor);
+	    }
+	    this.writeStr(msg, x, y, color );
+	    for( var i = 0; i < msg.length; ++i){
 		this.incCursor();
+	    }
 	}
     };
     this.backspace = function(){
@@ -160,7 +168,7 @@ function error(msg){
 
 //create a tokenizer ideally parse stuff more correctly and
 //print stuff more efficiently
-terminal.prototype.tokenize = function( msg ){
+function tokenize( msg ){
     var state = 'init';
     var token = '';
     var startIdx;
@@ -507,7 +515,6 @@ function clearVert( val ){
 
 function cursorMove( vert, horiz){
     return function(){
-	error(' moveing cursor here' );
 	term.cursorTo(term.csr.x + horiz, term.csr.y + vert );
     };
 }
@@ -589,12 +596,16 @@ function setDisplay(args ){
 }
 
 function resetScrollRegion( ){
+    error(' attempted to reset scroll region' );
     return setScrollRegion( 0, term.height );
 }
 
 function setScrollRegion( start, end ){
     if( end == undefined ){
-	end == term.height;
+	end = term.height;
+    }
+    if( start == undefined ){
+	start = 0;
     }
     return function(){
 	term.setScrollRegion( start, end );
@@ -633,7 +644,7 @@ socket.on('message', function (msg){
 	    error( 'csr x: ' + term.csr.x + ' y: ' + term.csr.y);
 	    error(msg);
 	}
-	tokens = term.tokenize(msg );
+	tokens = tokenize(msg );
 	processTokens( tokens );
 });
 
