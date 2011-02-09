@@ -145,7 +145,8 @@ function init(){
 	//canvas height width
     term = new terminal(cvs, 24, 80);
     //setup event handlers
-    document.onkeyup = keyboardInput;
+    document.onkeypress = keyboardInput;
+    document.onkeyup = backspaceHandler;
     socket.connect();
     term.startCursor();
 }
@@ -653,6 +654,17 @@ function sendEscape(){
 	socket.send('');
 }
 
+function backspaceHandler( ev ) {
+    var key = ev.keyCode;
+    switch( key ) {
+	case 8:
+	    socket.send('');
+	    break;
+	default:
+	    break;
+    }
+}
+
 function keyboardInput( ev ){
     var key = ev.keyCode;
     switch(key){
@@ -679,9 +691,6 @@ function keyboardInput( ev ){
 	    break;
 	default:
 	    key = String.fromCharCode(ev.which);
-	    if( !ev.shiftKey ){
-		key = key.toLowerCase();
-	    }
 	    socket.send(key);
 	    //term.print(key);
     }
