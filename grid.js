@@ -98,9 +98,9 @@ function terminalGrid( cnvs, height, width ){
 	    }
 	};
 	
-	this.writeStr = function( str, x, y, color ){
+	this.writeStr = function( str, x, y, color, bgcolor ){
 	    if( this.__proto__ instanceof terminalGrid ){
-		this.__proto__.writeStr( str, x,y, color );
+		this.__proto__.writeStr( str, x,y, color, bgcolor );
 	    }else{
 		if(color == undefined ) {
 		color = this.text.color;
@@ -111,12 +111,16 @@ function terminalGrid( cnvs, height, width ){
 		if(y == undefined){
 		    y = this.csr.y;
 		}
+		if(bgcolor == undefined ){
+		    bgcolor = this.background;
+		}
 
 		this.ctx.save();
 		//set up context
 		this.ctx.font = this.text.font;
 		this.ctx.fillStyle = color;
 		this.ctx.textBaseline = 'top';
+		this.drawRegion(x, y, str.length, 1, bgcolor );
 		//save stuff to text buffer
 		for( var i = 0; i < str.length; ++i ){
 		    this.textBuffer[y][x+i] = str.charAt(i);

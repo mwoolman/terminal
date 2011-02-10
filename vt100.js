@@ -60,10 +60,7 @@ function terminal(cnvs, height, width){
 	    this.print(msg.substr(0, this.width-x));
 	    this.print(msg.substr(this.width-x));
 	}else{
-	    if( this.text.bgcolor != undefined ){
-		this.drawRegion(x, y, msg.length, 1, this.text.bgcolor);
-	    }
-	    this.writeStr(msg, x, y, color );
+	    this.writeStr(msg, x, y, color, this.text.bgcolor );
 	    for( var i = 0; i < msg.length; ++i){
 		this.incCursor();
 	    }
@@ -305,11 +302,11 @@ function tokenize( msg ){
 		    state= 'init';
 		    break;
 		case 'A':
-		    tokenList.push( {type: 'set-attr', value : cursorMove(1,0), id: 'cursor up' } );
+		    tokenList.push( {type: 'set-attr', value : cursorMove(-1,0), id: 'cursor up' } );
 		    state= 'init';
 		    break;
 		case 'B':
-		    tokenList.push( {type: 'set-attr', value : cursorMove(-1,0), id: 'cursor down' } );
+		    tokenList.push( {type: 'set-attr', value : cursorMove(1,0), id: 'cursor down' } );
 		    state= 'init';
 		    break;
 		    
@@ -420,7 +417,7 @@ function tokenize( msg ){
 		case 'A':
 		    args.push( parseInt(token) );
 		    if( args.length == 1 ){
-			tokenList.push( {type: 'set-attr', value : cursorMove(args[0],0), id : 'cursor up' } );
+			tokenList.push( {type: 'set-attr', value : cursorMove(-args[0],0), id : 'cursor up' } );
 		    }else{
 			error('saw too many arguments to a move up token ' + msg.substr(startIdx, i-startIdx) );
 			tokenList.push( {type: 'string', value : msg.substr(startIdx, i-startIdx) } );
@@ -430,7 +427,7 @@ function tokenize( msg ){
 		case 'B':
 		    args.push( parseInt(token) );
 		    if( args.length == 1 ){
-			tokenList.push( {type: 'set-attr', value : cursorMove(-args[0],0), id: 'cursor down' } );
+			tokenList.push( {type: 'set-attr', value : cursorMove(args[0],0), id: 'cursor down' } );
 		    }else{
 			error('saw too many arguments to move down token ' + msg.substr(startIdx, i-startIdx) );
 			tokenList.push( {type: 'string', value : msg.substr(startIdx, i-startIdx) } );
@@ -608,7 +605,7 @@ function setScrollRegion( start, end ){
 	start = 0;
     }
     return function(){
-	term.setScrollRegion( start, end );
+	term.setScrollRegion( start-1, end );
     };
 }
 
