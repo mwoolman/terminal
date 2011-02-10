@@ -3,15 +3,15 @@ function terminalGrid( cnvs, height, width ){
 	if( cnvs == undefined ){
 	    return;
 	}
-	var ctx = cnvs.getContext('2d');
+	//var ctx = cnvs.getContext('2d');
 	if( height == undefined){
 		height = 24;
 	}
 	if( width == undefined ){
 		width = 80;
 	}
-	cvs.width = width;
-	cvs.height = height;
+	cnvs.width = width;
+	cnvs.height = height;
 
 	var textBuff = [];
 	textBuff.length = height;
@@ -29,9 +29,19 @@ function terminalGrid( cnvs, height, width ){
 	this.sel =  {'on' : false, 'sx' : 0, 'sy' : 0, 'ex':0, 'ey' : 0};
 	this.textBuffer =  textBuff;
 	this.cvs =  cnvs;
-	this.ctx =  ctx;
-
+	this.ctx =  cnvs.getContext('2d');
+    
 	//member functions
+	this.reset = function(){
+	    if( this.__proto__ instanceof terminalGrid ){
+		this.__proto__.reset();
+	    }else{
+		this.clearRegion(0,0, this.width, this.height );
+		this.csr.x = 0;
+		this.csr.y = 0;
+	    }
+	};
+    
 	this.setScrollRegion =  function( start, end){
 	    if( this.__proto__ instanceof terminalGrid ){
 		this.__proto__.setScrollRegion(start, end);
@@ -114,7 +124,6 @@ function terminalGrid( cnvs, height, width ){
 		if(bgcolor == undefined ){
 		    bgcolor = this.background;
 		}
-
 		this.ctx.save();
 		//set up context
 		this.ctx.font = this.text.font;

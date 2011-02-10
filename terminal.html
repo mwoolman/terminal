@@ -11,10 +11,12 @@
 </style>
 </head>
 <body onload='init();'>
-    <canvas id='cvs' width='800' height='500'>browser doesn't support canvas</canvas>
+ <!--   <canvas id='cvs' width='800' height='500'>browser doesn't support canvas</canvas>-->
+<div id='container'> </div>
     <a href='javascript:enableDebug()'>turn on debug</a> | 
     <a href='javascript:disableDebug()'>turn off debug </a> |
-    <a href='javascript:sendEscape()'>send escape</a>  
+    <a href='javascript:sendEscape()'>send escape</a> |
+    <a href='javascript:swapBuffers()'>swap buffers</a>
     <div id='coords'></div>
     <div id='errors'></div>
 </body>

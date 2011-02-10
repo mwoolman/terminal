@@ -1,6 +1,13 @@
 var debug = false;
 
 var term = undefined;
+var altTerm = undefined;
+var container = undefined;
+
+var maincvs = undefined;
+var altcvs = undefined;
+
+var swaped = false;
 
 function terminal(cnvs, height, width){
     terminal.prototype.constructor(cnvs, height, width);
@@ -146,9 +153,15 @@ terminal.prototype.stopCursor = function(){
 
 
 function init(){
-    cvs = document.getElementById('cvs');
+    container = document.getElementById('container');  
+    maincvs = document.createElement('canvas');
 	//canvas height width
-    term = new terminal(cvs, 24, 80);
+    term = new terminal(maincvs, 24, 80);
+    altcvs = document.createElement('canvas');
+    altTerm = new terminalGrid(altcvs, 24, 80);
+    container.appendChild( maincvs);
+    container.appendChild( altcvs);
+    altcvs.style.display = 'none';
     //setup event handlers
     document.onkeypress = keyboardInput;
     document.onkeyup = backspaceHandler;
@@ -156,6 +169,20 @@ function init(){
     term.startCursor();
 }
 
+
+function swapBuffers(){
+    var tmp = term.__proto__;
+	term.__proto__ = altTerm;
+	altTerm = tmp;
+    if( !swaped){
+	maincvs.style.display = 'none';
+	altcvs.style.display = 'block';
+    }else{
+	maincvs.style.display = 'block';
+	altcvs.style.display = 'none';
+    }
+    swaped = !swaped;
+}
 
 function error(msg){
     var el = document.createElement('p');
@@ -329,10 +356,24 @@ function tokenize( msg ){
 	    switch( msg.charAt(i) ){
 		case 'h':
 		case 'l':
+		    tokenList.push( {type : 'set-attr', value : hideshow( parseInt(token ), msg.charAt(i) ), id : 'hide show command'} );
 		    state = 'init';
 		break;
+		case '0':
+		case '1':
+		case '2':
+		case '3':
+		case '4':
+		case '5':
+		case '6':
+		case '7':
+		case '8':
+		case '9':
+		    token += msg.charAt(i);
+		    break;
 		default:
-		    //TODO: don't discard this token
+		    error("recieved unexpected hide-show command ( " + msg.substr(startIdx, i-startIdx) + ' )');
+		    state = 'init';
 		    break;
 	    }
 	}//end of hide-show
@@ -465,6 +506,19 @@ function tokenize( msg ){
     }
     return tokenList;
 }//end of tokenize
+
+function hideshow( val, hideParam ){
+    if( val == '1049'){
+	return function(){
+	    if( swaped ){
+		altTerm.reset();
+	    }
+	    swapBuffers( );
+	};
+    }else{
+	return function() { return ; };
+    }	
+}	
 
 function processXterm( str, option ){
     return function(){
