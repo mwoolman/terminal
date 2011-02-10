@@ -25,13 +25,90 @@ function terminalGrid( cnvs, height, width ){
 	this.background = 'black';
 	this.scrollRegion = {start: 0, end: height};
 	this.csr = {'x' : 0, 'y': 0 };
-	this.text =  {'color' : '#009900', 'font' : '15px courier', 'width' : 9, 'height' : 15 };
+	this.text =  {color : '#009900', font : '15px courier', width : 9, height : 15 };
 	this.sel =  {'on' : false, 'sx' : 0, 'sy' : 0, 'ex':0, 'ey' : 0};
 	this.textBuffer =  textBuff;
 	this.cvs =  cnvs;
 	this.ctx =  cnvs.getContext('2d');
     
 	//member functions
+	//selection methods
+	//translate canvas x y into grid coordinates
+	this.getCoords = function( x_t, y_t){
+	    if( this.__proto__ instanceof terminalGrid ){
+		return this.__proto__.getCoords(x_t, y_t);
+	    }else{
+		return { x: Math.floor( (x_t - this.cvs.offsetLeft - 4 )/ this.text.width ),
+			 y: Math.floor( (y_t - this.cvs.offsetTop  - 4) / this.text.height ) };
+	    }
+	};
+	
+	this.endSel = function( x, y ){
+	    if( this.__proto__ instanceof terminalGrid ){
+		this.__proto__.endSel(x, y);
+	    }else{
+		if( this.sel.ex != x || this.sel.ey != y ){
+		    this.drawSel(true);
+		    this.sel.ex = x;
+		    this.sel.ey = y;
+		    this.drawSel(false);
+		}
+	    }
+	};
+	this.beginSel = function( x, y ){
+	    if( this.__proto__ instanceof terminalGrid ){
+		this.__proto__.beginSel(x, y);
+	    }else{
+		if( this.sel.sx != this.sel.ex || this.sel.ey != this.sel.sy){
+		    this.drawSel(true);
+		}
+		this.sel.sx = x;
+		this.sel.sy = y;
+		this.sel.ex = x;
+		this.sel.ey = y;
+	    }
+	};
+	this.drawSel = function(invert){
+	    if( this.__proto__ instanceof terminalGrid ){
+		this.__proto__.drawSel(x, y);
+	    }else{
+		var curx, cury, stopx, stopy, tc, bc;
+		if( this.sel.ey >= this.sel.sy){ 
+		    cury = this.sel.sy; 
+		    stopy = this.sel.ey;
+		} else { 
+		    cury = this.sel.ey;
+		    stopy = this.sel.sy;
+		}
+		if( this.sel.ex >= this.sel.sx){
+		    curx = this.sel.sx;
+		    stopx = this.sel.ex;
+		}else{
+		    curx = this.sel.ey;
+		    stopx = this.sel.sx;
+		}
+		if(invert){
+		    tc = this.text.color;
+		    bc = this.background;
+		}else{
+		    tc = this.background;
+		    bc = this.text.color;
+		}
+		//loop over selection and highlight
+		while( curx != stopx || cury != stopy ){
+		    this.drawRegion(curx, cury,1,1, bc);
+		    this.writeChar(this.textBuffer[cury][curx], curx, cury, tc );
+		    curx++;
+		    if( curx >= this.width ){
+			cury++;
+			curx = 0;
+		    }
+		}
+	    }
+	    
+	};
+	//---------------------------------------------
+	//resets stuff
 	this.reset = function(){
 	    if( this.__proto__ instanceof terminalGrid ){
 		this.__proto__.reset();
@@ -146,6 +223,9 @@ function terminalGrid( cnvs, height, width ){
 	    if( this.__proto__ instanceof terminalGrid ){
 		this.__proto__.writeChar( ch, x, y, color );
 	    }else{
+		if( ch == undefined ){
+		    return;
+		}
 		if(color == undefined ) {
 		color = this.text.color;
 		}

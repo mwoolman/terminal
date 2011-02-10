@@ -15,6 +15,7 @@ function terminal(cnvs, height, width){
     var normalColors = ['#000000', '#800000', '#008000', '#808000', '#000080', '#800080', '#008080', '#C0C0C0'];
     var brightColors = ['#808080', '#FF0000', '#00FF00', '#FFFF00', '#0000FF', '#FF00FF', '#00FFFF', '#FFFFFF' ];
     this.colors = normalColors;
+    //NOTE: blink.on = true means the cursor is currently not drawn
     this.blink = { on : false, interval: undefined, blinkrate : 500};
     //add text stuff
     this.text = {bgcolor : undefined, color : undefined };
@@ -159,6 +160,8 @@ function init(){
     //setup event handlers
     document.onkeypress = keyboardInput;
     document.onkeyup = backspaceHandler;
+    //register mouse handler for selection
+    maincvs.onmousedown = beginSelect;
     socket.connect();
     term.startCursor();
 }
@@ -727,6 +730,27 @@ function backspaceHandler( ev ) {
 	default:
 	    break;
     }
+}
+
+
+function endSelection( ev ){
+    term.cvs.onmousemove = undefined;
+    term.cvs.onmouseup = undefined;
+    var coords = term.getCoords( ev.x, ev.y );
+    term.endSel( coords.x, coords.y );
+}
+
+function enlargeSelection( ev ){
+    var coords = term.getCoords( ev.x, ev.y );
+    term.endSel( coords.x, coords.y );
+}
+
+function beginSelect( ev ){
+    var coords = term.getCoords( ev.x, ev.y );
+    term.beginSel( coords.x, coords.y);
+    term.cvs.onmousemove = enlargeSelection;
+    term.cvs.onmouseup = endSelection;
+    term.cvs.onclick = undefined;
 }
 
 function keyboardInput( ev ){
