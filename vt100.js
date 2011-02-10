@@ -15,9 +15,7 @@ function terminal(cnvs, height, width){
     var normalColors = ['#000000', '#800000', '#008000', '#808000', '#000080', '#800080', '#008080', '#C0C0C0'];
     var brightColors = ['#808080', '#FF0000', '#00FF00', '#FFFF00', '#0000FF', '#FF00FF', '#00FFFF', '#FFFFFF' ];
     this.colors = normalColors;
-    this.csr.on = false;
-    this.csr.interval = undefined;
-    this.csr.blinkrate = 500;
+    this.blink = { on : false, interval: undefined, blinkrate : 500};
     //add text stuff
     this.text = {bgcolor : undefined, color : undefined };
     //members
@@ -36,7 +34,7 @@ function terminal(cnvs, height, width){
 	if( bgcolor == undefined){
 	    bgcolor = this.background;
 	}
-	if( this.csr.on){
+	if( this.blink.on){
 		this.drawBlock(x,y);
 		if( c != undefined) {
 			this.writeChar(c,x,y, bgcolor);
@@ -47,8 +45,26 @@ function terminal(cnvs, height, width){
 			this.writeChar(c,x,y );
 		}
 	}
-	this.csr.on = !this.csr.on;
+	this.blink.on = !this.blink.on;
     };
+
+    this.startCursor = function(){
+	var obj = this;
+	if( this.blink.interval == undefined ){
+	    this.blink.interval = setInterval('term.drawCursor()', this.blink.blinkrate );
+	}
+    };
+
+    this.stopCursor = function(){
+	    clearInterval(this.blink.interval);
+	    this.blink.interval = undefined;
+	    if( this.blink.on ){
+	    this.clearCursor();
+	    }
+	    this.blink.on = false;
+    };
+
+    //draw block
     this.drawBlock =  function(x, y, color ){
 	    this.drawRegion( x, y, 1, 1, color);
     };
@@ -94,7 +110,7 @@ function terminal(cnvs, height, width){
 	this.__proto__.csr.x = 0;
     };
     this.clearCursor = function (){
-	if( this.csr.on ){
+	if( this.blink.on ){
 	    var c = this.charAt(this.csr.x, this.csr.y);
 	    this.clearBlock(this.csr.x, this.csr.y);
 	    if( c != undefined ){
@@ -127,31 +143,8 @@ function terminal(cnvs, height, width){
 
 terminal.prototype = new terminalGrid;
 
-terminal.prototype.startCursor = function(){
-    var obj = this;
-    if( this.csr.interval == undefined ){
-	this.csr.interval = setInterval('term.drawCursor()', this.csr.blinkrate );
-    }
-}
-/*
-//additional stuff
-function startCursor(){
-	if( term.csr.interval == undefined){
-	term.csr.interval = setInterval(term.drawCursor()', term.csr.blinkrate );
-	}
-	
-}
-*/
 
 
-terminal.prototype.stopCursor = function(){
-	clearInterval(this.csr.interval);
-	this.csr.interval = undefined;
-	if( this.csr.on ){
-	this.clearCursor();
-	}
-	this.csr.on = false;
-}
 
 
 function init(){
@@ -510,12 +503,20 @@ function tokenize( msg ){
 }//end of tokenize
 
 function hideshow( val, hideParam ){
-    if( val == '1049'){
+    if( val == 1049 ){
 	return function(){
 	    if( swaped ){
 		altTerm.reset();
 	    }
 	    swapBuffers( );
+	};
+    }else if( val == 25 ){
+	return function(){
+	    if( hideParam == 'l' ){
+		term.stopCursor();
+	    }else{
+		term.startCursor();
+	    }
 	};
     }else{
 	return function() { return ; };
