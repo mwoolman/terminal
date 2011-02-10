@@ -94,10 +94,12 @@ function terminal(cnvs, height, width){
 	this.__proto__.csr.x = 0;
     };
     this.clearCursor = function (){
-	var c = this.charAt(this.csr.x, this.csr.y);
-	this.clearBlock(this.csr.x, this.csr.y);
-	if( c != undefined ){
-		this.writeChar(c, this.csr.x, this.csr.y);
+	if( this.csr.on ){
+	    var c = this.charAt(this.csr.x, this.csr.y);
+	    this.clearBlock(this.csr.x, this.csr.y);
+	    if( c != undefined ){
+		    this.writeChar(c, this.csr.x, this.csr.y);
+	    }
 	}
     };
     this.cursorTo = function (x, y){
