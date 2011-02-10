@@ -164,10 +164,23 @@ function init(){
     document.onkeyup = backspaceHandler;
     //register mouse handler for selection
     maincvs.onmousedown = beginSelect;
+    altcvs.onmousedown = beginSelect;
     socket.connect();
     term.startCursor();
+    document.oncopy = copyTest;
+    document.onpaste = pasteFunc; 
 }
 
+function pasteFunc(ev){ 
+    socket.send(ev.clipboardData.getData('Text')); 
+}
+
+function copyTest(ev){
+    var el = document.getElementById('copybuff');
+    el.value = copyBuffer;
+    el.select();
+    document.execCommand('copy');
+}
 
 function swapBuffers(){
     var tmp = term.__proto__;
@@ -748,15 +761,15 @@ function enlargeSelection( ev ){
 }
 
 function beginSelect( ev ){
-    if( ev.button ==2 ){
-	socket.send(copyBuffer);
-    }else{
+    //if( ev.button ==2 ){
+//	socket.send(copyBuffer);
+    //}else{
 	var coords = term.getCoords( ev.x, ev.y );
 	term.beginSel( coords.x, coords.y);
 	term.cvs.onmousemove = enlargeSelection;
 	term.cvs.onmouseup = endSelection;
 	term.cvs.onclick = undefined;
-    }
+    //}
 }
 
 function keyboardInput( ev ){

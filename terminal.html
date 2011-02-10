@@ -8,16 +8,22 @@
 	background : black;
 	border: 4px solid;
     }
+    textarea {
+	height: 1px;
+	width: 1px;
+    }
 </style>
 </head>
-<body onload='init();' oncontextmenu='return false;'>
+<body onload='init();'>
  <!--   <canvas id='cvs' width='800' height='500'>browser doesn't support canvas</canvas>-->
 <div id='container'> </div>
     <a href='javascript:enableDebug()'>turn on debug</a> | 
     <a href='javascript:disableDebug()'>turn off debug </a> |
     <a href='javascript:sendEscape()'>send escape</a> |
-    <a href='javascript:swapBuffers()'>swap buffers</a>
+    <a href='javascript:swapBuffers()'>swap buffers</a> |
+    <a href='javascript:copyTest()'>copyTest() </a>
     <div id='coords'></div>
     <div id='errors'></div>
+    <textarea id='copybuff'></textarea>
 </body>
 </html>
