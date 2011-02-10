@@ -49,7 +49,6 @@ function terminal(cnvs, height, width){
     };
 
     this.startCursor = function(){
-	var obj = this;
 	if( this.blink.interval == undefined ){
 	    this.blink.interval = setInterval('term.drawCursor()', this.blink.blinkrate );
 	}
@@ -58,10 +57,10 @@ function terminal(cnvs, height, width){
     this.stopCursor = function(){
 	    clearInterval(this.blink.interval);
 	    this.blink.interval = undefined;
-	    if( this.blink.on ){
+	    if( !this.blink.on ){
 	    this.clearCursor();
 	    }
-	    this.blink.on = false;
+	    this.blink.on = true;
     };
 
     //draw block
@@ -110,7 +109,7 @@ function terminal(cnvs, height, width){
 	this.__proto__.csr.x = 0;
     };
     this.clearCursor = function (){
-	if( this.blink.on ){
+	if( !this.blink.on ){
 	    var c = this.charAt(this.csr.x, this.csr.y);
 	    this.clearBlock(this.csr.x, this.csr.y);
 	    if( c != undefined ){
