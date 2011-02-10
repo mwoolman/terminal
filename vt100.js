@@ -9,6 +9,8 @@ var altcvs = undefined;
 
 var swaped = false;
 
+var copyBuffer = '';
+
 function terminal(cnvs, height, width){
     terminal.prototype.constructor(cnvs, height, width);
     //add csr info
@@ -746,11 +748,15 @@ function enlargeSelection( ev ){
 }
 
 function beginSelect( ev ){
-    var coords = term.getCoords( ev.x, ev.y );
-    term.beginSel( coords.x, coords.y);
-    term.cvs.onmousemove = enlargeSelection;
-    term.cvs.onmouseup = endSelection;
-    term.cvs.onclick = undefined;
+    if( ev.button ==2 ){
+	socket.send(copyBuffer);
+    }else{
+	var coords = term.getCoords( ev.x, ev.y );
+	term.beginSel( coords.x, coords.y);
+	term.cvs.onmousemove = enlargeSelection;
+	term.cvs.onmouseup = endSelection;
+	term.cvs.onclick = undefined;
+    }
 }
 
 function keyboardInput( ev ){

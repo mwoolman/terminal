@@ -94,12 +94,19 @@ function terminalGrid( cnvs, height, width ){
 		    tc = this.background;
 		    bc = this.text.color;
 		}
+		copyBuffer = '';
 		//loop over selection and highlight
 		while( curx != stopx || cury != stopy ){
 		    this.drawRegion(curx, cury,1,1, bc);
 		    this.writeChar(this.textBuffer[cury][curx], curx, cury, tc );
+		    if( this.textBuffer[cury][curx] == undefined ){
+			copyBuffer += ' ';
+		    }else{
+			copyBuffer += this.textBuffer[cury][curx];
+		    }
 		    curx++;
 		    if( curx >= this.width ){
+			copyBuffer += '\n';
 			cury++;
 			curx = 0;
 		    }
