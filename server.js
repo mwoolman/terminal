@@ -70,9 +70,11 @@ io.on('connection', function(client){
 	console.log('process exited with code ' + code);
     });
     client.on('message', function(message){
-	console.log('got message ' + message );
+	//console.log('got message ' + message );
 	//pass the data through to the process
-	var result = proc.stdin.write(message);
+	if( proc.stdin.writable ){
+	    var result = proc.stdin.write(message);
+	}
     });
     client.on('disconnect', function(){
 	 proc.stdin.end()//end the process
