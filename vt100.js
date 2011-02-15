@@ -147,8 +147,6 @@ terminal.prototype = new terminalGrid;
 
 
 
-
-
 function init(){
     container = document.getElementById('container');  
     maincvs = document.createElement('canvas');
