@@ -20,7 +20,19 @@ function terminal(cnvs, height, width){
     //NOTE: blink.on = true means the cursor is currently not drawn
     this.blink = { on : false, interval: undefined, blinkrate : 500};
     //add text stuff
+
     this.text = {bgcolor : undefined, color : undefined };
+    this.setColors = function( bColors, nColors ){
+	if( bColors.length != brightColors.length  || nColors != normalColors.length ){
+	    return; //rudimentary checking;
+	}else{
+	    normalColors = nColors;
+	    brightColors = bColors;
+	}
+    }
+    this.getColors = function(){
+	return {bright: brightColors, dark: normalColors };
+    };
     //members
     this.setBright = function(){
 	this.colors = brightColors;
@@ -167,6 +179,7 @@ function init(){
     term.startCursor();
     document.oncopy = copyTest;
     document.onpaste = pasteFunc; 
+    createColorWidget();
 }
 
 function pasteFunc(ev){ 

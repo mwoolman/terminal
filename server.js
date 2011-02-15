@@ -22,6 +22,7 @@ switch (path){
     case '/terminal.html':
     case '/grid.js':
     case '/vt100.js':
+    case '/utils.js':
       fs.readFile(__dirname +'/'+ path, function(err, data){
 	console.log(__dirname +'/'+ path);
         if (err) return send404(res);
