@@ -114,6 +114,7 @@ function createColorWidget(){
 }
 
 
+
 function showColorSelector(){
     document.getElementById('colors').style.display = 'block';
     
@@ -125,7 +126,16 @@ function hideColorSelector(){
 }
 
 function setColors(){
-
+	var bColors = [];
+	var dColors = [];
+	for( idx in setBrightRow ){
+		bColors.push(setBrightRow[idx].value);
+		dColors.push(setDarkRow[idx].value);
+	}
+	term.setColors(bColors, dColors);
+	var txtDef = txtDefault[1].value;
+	var bgDef = bgDefault[1].value;
+	term.setTerminalDefaults(bgDef, txtDef);
 }
 
 function getKeyboard(){

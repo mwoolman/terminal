@@ -45,6 +45,7 @@ function terminalGrid( cnvs, height, width ){
 			this.__proto__.setBackGround(bgcolor);
 		}else{
 			this.background = bgcolor;
+			this.cvs.style.background = bgcolor;
 		}
 	};
 	this.setTextColor = function (textColor ){
