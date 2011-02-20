@@ -13,12 +13,20 @@ function createColorWidget(){
 
     var currEl;
     var colors = term.getColors();
+
+	currEl  = document.createElement('td');
+	currEl.innerHTML = "Bright Colors";
+	br.appendChild(currEl);
+
     for( idx in colors.bright ){
 	currEl  = document.createElement('td');
 	currEl.style.background = colors.bright[idx];
 	br.appendChild(currEl);
     }
     br = br.nextElementSibling;
+	currEl  = document.createElement('td');
+	br.appendChild(currEl);
+
     for( idx in colors.bright ){
 	currEl  = document.createElement('td');
 	var txt = document.createElement('input');
@@ -29,12 +37,18 @@ function createColorWidget(){
     }
     br = br.nextElementSibling;
     // dark colors
+	currEl  = document.createElement('td');
+	currEl.innerHTML = "Normal Colors";
+	br.appendChild(currEl);
+
     for( idx in colors.dark ){
 	currEl  = document.createElement('td');
 	currEl.style.background = colors.dark[idx];
 	br.appendChild(currEl);
     }
     br = br.nextElementSibling;
+	currEl  = document.createElement('td');
+	br.appendChild(currEl);
     for( idx in colors.dark ){
 	currEl  = document.createElement('td');
 	var txt = document.createElement('input');
@@ -43,7 +57,24 @@ function createColorWidget(){
 	currEl.appendChild(txt);
 	br.appendChild(currEl);
     }
-    
+	//background
+	br = br.nextElementSibling;
+	currEl  = document.createElement('td');
+	currEl.innerHTML = "Normal Colors";
+	br.appendChild(currEl);
+	currEl = document.createElement('td');
+	currEl.style.background = term.background;
+	br.appendChild(currEl);
+	//color selector
+	br = br.nextElementSibling;
+	currEl  = document.createElement('td');
+	br.appendChild(currEl);
+	currEl = document.createElement('td');
+	var txt = document.createElement('input');
+	txt.type = 'text';
+	txt.value = term.background;
+	currEl.appendChild(txt);
+	br.appendChild(currEl);
     
 }
 
@@ -55,5 +86,9 @@ function showColorSelector(){
 function hideColorSelector(){
     document.getElementById('colors').style.display = 'none';
     
+}
+
+function setColors(){
+
 }
 

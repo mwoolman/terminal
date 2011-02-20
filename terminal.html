@@ -17,6 +17,15 @@
 	height : 20px;
 	border : 2px solid;
     }
+	input{
+		width : 80px;
+	}
+	table {
+		padding : 15px;
+		background : white;
+		-webkit-box-shadow : 0 1px 4px rgba(0, 0, 0, 0.3), 0 0 60px rgba(0, 0, 0, 0.1) inset;
+		border-radius: 4px;
+	}
 </style>
 </head>
 <body onload='init();'>
@@ -33,7 +42,12 @@
     <tr id='bright'></tr>
     <tr id='set-bright'></tr>
     <tr id='dark'></tr>
-    <tr id='set-dark'></tr></table></div>
+    <tr id='set-dark'></tr>
+	<tr id='background'></tr>
+	<tr id='set-background'></tr>
+	<tr><td style="border: none"><input type='button' OnClick='setColors();' value="Set Colors"></input></td></tr>
+	</table>
+	</div>
     <div id='errors'></div>
     <textarea id='copybuff'></textarea>
 </body>
