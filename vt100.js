@@ -20,25 +20,29 @@ function terminal(cnvs, height, width){
     //NOTE: blink.on = true means the cursor is currently not drawn
     this.blink = { on : false, interval: undefined, blinkrate : 500};
     //add text stuff
-
+	
     this.text = {bgcolor : undefined, color : undefined };
+	this.setTerminalDefaults = function( bgColor, textColor){
+		this.setBackGround(bgColor);
+		this.setTextColor(textColor);
+	};
     this.setColors = function( bColors, nColors ){
-	if( bColors.length != brightColors.length  || nColors != normalColors.length ){
-	    return; //rudimentary checking;
-	}else{
-	    normalColors = nColors;
-	    brightColors = bColors;
-	}
+		if( bColors.length != brightColors.length  || nColors != normalColors.length ){
+			return; //rudimentary checking;
+		}else{
+			normalColors = nColors;
+			brightColors = bColors;
+		}
     }
     this.getColors = function(){
-	return {bright: brightColors, dark: normalColors };
+		return {bright: brightColors, dark: normalColors };
     };
     //members
     this.setBright = function(){
-	this.colors = brightColors;
+		this.colors = brightColors;
     }
     this.setDark = function(){
-	this.colors = normalColors;
+		this.colors = normalColors;
     }
     //cursor
     this.drawCursor = function(){
@@ -789,7 +793,7 @@ function keyboardInput( ev ){
 	case 16:
 	case 17:
 	    break;//saw a shift
-	case 37:
+	/*case 37:
 		term.cursorTo( term.csr.x - 1, term.csr.y);
 	    break;
 	case 38:
@@ -800,7 +804,7 @@ function keyboardInput( ev ){
 	    break;
 	case 40:
 		term.cursorTo( term.csr.x, term.csr.y + 1);
-	    break;
+	    break;*/
 	case 13:
 	    socket.send('\n');
 	    break;

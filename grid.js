@@ -32,6 +32,29 @@ function terminalGrid( cnvs, height, width ){
 	this.ctx =  cnvs.getContext('2d');
     
 	//member functions
+	//color default changers
+	this.getTextDefault = function(){
+		if( this.__proto__ instanceof terminalGrid ){
+			return this.__proto__.getTextDefault();
+		}else{
+			return this.text.color;
+		}
+	}
+	this.setBackGround = function (bgcolor ){
+		if( this.__proto__ instanceof terminalGrid ){
+			this.__proto__.setBackGround(bgcolor);
+		}else{
+			this.background = bgcolor;
+		}
+	};
+	this.setTextColor = function (textColor ){
+		if( this.__proto__ instanceof terminalGrid ){
+			this.__proto__.setTextColor(textColor);
+		}else{
+			this.text.color = textColor;
+		}
+
+	}
 	//selection methods
 	//translate canvas x y into grid coordinates
 	this.getCoords = function( x_t, y_t){
