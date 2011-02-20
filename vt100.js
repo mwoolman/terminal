@@ -788,6 +788,10 @@ function beginSelect( ev ){
 }
 
 function keyboardInput( ev ){
+	var target = ev.target;
+	if( /INPUT/.test(target.nodeName) ){
+		return;
+	}
     var key = ev.keyCode;
     switch(key){
 	case 16:
