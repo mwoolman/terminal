@@ -16,6 +16,7 @@ function createColorWidget(){
 
 	currEl  = document.createElement('td');
 	currEl.innerHTML = "Bright Colors";
+	currEl.className = "label";
 	br.appendChild(currEl);
 
     for( idx in colors.bright ){
@@ -25,6 +26,7 @@ function createColorWidget(){
     }
     br = br.nextElementSibling;
 	currEl  = document.createElement('td');
+	currEl.className = "spacer";
 	br.appendChild(currEl);
 
     for( idx in colors.bright ){
@@ -39,6 +41,7 @@ function createColorWidget(){
     // dark colors
 	currEl  = document.createElement('td');
 	currEl.innerHTML = "Normal Colors";
+	currEl.className = "label";
 	br.appendChild(currEl);
 
     for( idx in colors.dark ){
@@ -48,6 +51,7 @@ function createColorWidget(){
     }
     br = br.nextElementSibling;
 	currEl  = document.createElement('td');
+	currEl.className = "spacer";
 	br.appendChild(currEl);
     for( idx in colors.dark ){
 	currEl  = document.createElement('td');
@@ -60,7 +64,8 @@ function createColorWidget(){
 	//background
 	br = br.nextElementSibling;
 	currEl  = document.createElement('td');
-	currEl.innerHTML = "Normal Colors";
+	currEl.innerHTML = "background";
+	currEl.className = "label";
 	br.appendChild(currEl);
 	currEl = document.createElement('td');
 	currEl.style.background = term.background;
@@ -68,6 +73,7 @@ function createColorWidget(){
 	//color selector
 	br = br.nextElementSibling;
 	currEl  = document.createElement('td');
+	currEl.className = "spacer";
 	br.appendChild(currEl);
 	currEl = document.createElement('td');
 	var txt = document.createElement('input');
