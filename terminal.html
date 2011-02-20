@@ -8,10 +8,16 @@
     canvas {
 	background : black;
 	border: 4px solid;
+	z-index: 2;
+	position: relative;
     }
     textarea {
 	height: 1px;
 	width: 1px;
+	position: absolute;
+	top: 50px;
+	left: 50px;
+	z-index: 1;
     }
     td {
 	height : 20px;
@@ -43,6 +49,7 @@
     <a href='javascript:swapBuffers()'>swap buffers</a> |
     <a href='javascript:showColorSelector()'>select colors</a> |
     <a href='javascript:hideColorSelector()'>hide colors</a> |
+	<a href='javascript:getKeyboard()'>show keyboard</a>
     <div id='coords'></div>
     <div id='colors'><table>
     <tr id='bright'></tr>

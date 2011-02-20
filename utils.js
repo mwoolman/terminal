@@ -98,3 +98,6 @@ function setColors(){
 
 }
 
+function getKeyboard(){
+	document.getElementById('copybuff').focus();
+}
