@@ -6,7 +6,7 @@ var http = require('http'),
     url = require('url'),
     fs = require ('fs'),
     sys = require('sys'),
-    io = require ('/users/mwoolman/sockets/socket.io'),
+    io = require ('socket.io'),
     spawn = require('child_process').spawn,
     server;
 var pth;
@@ -53,18 +53,18 @@ server.listen(8081);
 var io = io.listen(server);
 
 io.on('connection', function(client){
-    var proc = spawn("/usr/bin/irssi");
+    var proc = spawn("/usr/bin/irssi", ['2>&1']);
     //var proc = spawn('/bin/bash', ['-i']);
     //proc.stdout.setEncoding('utf8');
     //proc.stderr.setEncoding('utf8');
     proc.stdout.on('data', function(data){
 	//console.log('stdout: ' + data);
-	client.send(data);
+	client.send(data.toString('utf8'));
     });
     proc.stderr.on('data', function(data){
 	//console.log('stderr: ')
 	//console.log( data);
-	client.send(data);
+	client.send(data.toSting('utf8'));
 
     });
     proc.on('exit', function(code){
