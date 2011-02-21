@@ -25,6 +25,8 @@ function terminal(cnvs, height, width){
 	this.setTerminalDefaults = function( bgColor, textColor){
 		this.setBackGround(bgColor);
 		this.setTextColor(textColor);
+		altTerm.setBackGround(bgColor);
+		altTerm.setTextColor(textColor);
 	};
     this.setColors = function( bColors, nColors ){
 		if( bColors.length != brightColors.length  || nColors != normalColors.length ){
@@ -183,6 +185,7 @@ function init(){
     term.startCursor();
     document.oncopy = copyTest;
     document.onpaste = pasteFunc; 
+
     createColorWidget();
 }
 

@@ -108,6 +108,9 @@ function createColorWidget(){
 			profilesCombo.appendChild(createOption(name));
 		}
 	}
+
+	loadProfile();
+	setColors();
     
 }
 
