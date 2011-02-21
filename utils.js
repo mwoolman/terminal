@@ -199,3 +199,7 @@ function loadProfile(){
 	txtDefault[0].style.background = prof.TextColor;
 	txtDefault[1].value = prof.TextColor;
 };
+
+function clearProfiles(){
+	localStorage.removeItem('colorProfiles');
+}
