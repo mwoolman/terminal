@@ -5,11 +5,27 @@ var setDarkRow = [];
 var bgDefault = [];
 var txtDefault = [];
 
+var profiles = [];
+//name element for saving
+var profName;
+var profilesCombo;
+
+function Profile(brightColors, normalColors, bg, text ){
+	this.NormalColors = normalColors;
+	this.BrightColors = brightColors;
+	this.BackGround = bg;
+	this.TextColor = text; 
+}
+
 //color
 var DefaultNormalColors = ['#000000', '#800000', '#008000', '#808000', '#000080', '#800080', '#008080', '#C0C0C0'];
 var DefaultBrightColors = ['#808080', '#FF0000', '#00FF00', '#FFFF00', '#0000FF', '#FF00FF', '#00FFFF', '#FFFFFF' ];
 
 function createColorWidget(){
+	profiles = JSON.parse(localStorage.getItem("colorProfiles"));
+	profName = document.getElementById('profileName');
+	profilesCombo = document.getElementById('profiles');
+
     var br = document.getElementById('bright');
 
     var currEl;
@@ -51,7 +67,7 @@ function createColorWidget(){
 
     for( idx in colors.dark ){
 		currEl  = createCell();
-		var txt = createInputField(colors.bright[idx]);
+		var txt = createInputField(colors.dark[idx]);
 
 		currEl.appendChild(txt);
 		setDarkRow.push(txt);
@@ -84,9 +100,23 @@ function createColorWidget(){
 	currEl.appendChild(txt);
 	txtDefault.push(txt);
 	br.appendChild(currEl);
+	if( profiles == null ){
+		profiles = {};
+		SaveProfile("default");
+	}else{
+		for( name in profiles ){
+			profilesCombo.appendChild(createOption(name));
+		}
+	}
     
 }
 
+function createOption( name ){
+	var el = document.createElement('option');
+	el.value = name;
+	el.innerHTML = name;
+	return el;
+}
 
 function createCell( text, bg, className ){
 	var el = document.createElement('td');
@@ -116,6 +146,18 @@ function hideColorSelector(){
     
 }
 
+function createProfile( ){
+	var bColors = [];
+	var dColors = [];
+	for( idx in setBrightRow ){
+		bColors.push(setBrightRow[idx].value);
+		dColors.push(setDarkRow[idx].value);
+	}
+	var txtDef = txtDefault[1].value;
+	var bgDef = bgDefault[1].value;
+	return new Profile( bColors, dColors, bgDef, txtDef);
+}
+
 function setColors(){
 	var bColors = [];
 	var dColors = [];
@@ -132,3 +174,28 @@ function setColors(){
 function getKeyboard(){
 	document.getElementById('copybuff').focus();
 }
+
+function SaveProfile(){
+	if( profName.value == ""){
+		//do nothing for now
+		return;
+	}
+	profiles[profName.value] = createProfile( ) ;
+	localStorage.setItem('colorProfiles', JSON.stringify(profiles));
+	profilesCombo.appendChild(createOption(profName.value));
+	
+}
+
+function loadProfile(){
+	var prof = profiles[profilesCombo.value];
+	for( i in brightRow ){
+		brightRow[i].style.background = prof.BrightColors[i];
+		setBrightRow[i].value = prof.BrightColors[i];
+		darkRow[i].style.background = prof.NormalColors[i];
+		setDarkRow[i].value = prof.NormalColors[i];
+	} 
+	bgDefault[0].style.background = prof.BackGround;
+	bgDefault[1].value = prof.BackGround;
+	txtDefault[0].style.background = prof.TextColor;
+	txtDefault[1].value = prof.TextColor;
+};
