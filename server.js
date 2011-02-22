@@ -53,7 +53,7 @@ server.listen(8081);
 var io = io.listen(server);
 
 io.on('connection', function(client){
-    var proc = spawn("/usr/bin/irssi", ['2>&1']);
+    var proc = spawn("irssi", []);
     //var proc = spawn('/bin/bash', ['-i']);
     //proc.stdout.setEncoding('utf8');
     //proc.stderr.setEncoding('utf8');
@@ -64,7 +64,7 @@ io.on('connection', function(client){
     proc.stderr.on('data', function(data){
 	//console.log('stderr: ')
 	//console.log( data);
-	client.send(data.toSting('utf8'));
+	client.send(data.toString('utf8'));
 
     });
     proc.on('exit', function(code){
