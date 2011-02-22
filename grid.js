@@ -329,6 +329,24 @@ function terminalGrid( cnvs, height, width ){
 		}
 		return this.textBuffer[y][x];
 	};
+	this.scrollDown = function (){
+	    if( this.__proto__ instanceof terminalGrid ){
+		this.__proto__.scrollDown();
+	    }else{
+		this.ctx.save();
+		var i_data = this.ctx.getImageData(0, this.scrollRegion.start * this.text.height, this.cvs.width,  (this.scrollRegion.end -2) * this.text.height );
+		this.ctx.putImageData( i_data,0, (this.scrollRegion.start +1) * this.text.height);
+		this.ctx.clearRect(0, this.scrollRegion.start * this.text.height, this.cvs.width, this.text.height );
+		var newline = [];
+		newline.length = this.width;
+		//splice out the line at the begining
+		this.textBuffer.splice(this.scrollRegion.end-1, 1);
+		//splice in new line buffer
+		this.textBuffer.splice(this.scrollRegion.start, 0, newline);
+		
+		this.ctx.restore();
+	    }
+	}
 	this.scrollUp =  function (){
 	    if( this.__proto__ instanceof terminalGrid ){
 		this.__proto__.scrollUp();
