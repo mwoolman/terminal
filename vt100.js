@@ -796,7 +796,7 @@ function beginSelect( ev ){
     //}
 }
 
-var showAlert = true;
+var showAlert = false;
 function windowEvent( ev ){
     if( showAlert ){
 	alert("you are leaving this page, if you didn't intent this to happen it is recommended that you run application in a seperate browser window");
