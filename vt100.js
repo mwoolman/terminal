@@ -177,7 +177,9 @@ function init(){
     altcvs.style.display = 'none';
     //setup event handlers
     document.onkeypress = keyboardInput;
-    document.onkeyup = backspaceHandler;
+    document.onkeyup = keyUpHandler;
+    document.onkeydown = keyDownHandler;
+    window.addEventListener("blur", windowEvent, true );
     //register mouse handler for selection
     maincvs.onmousedown = beginSelect;
     altcvs.onmousedown = beginSelect;
@@ -358,6 +360,10 @@ function tokenize( msg ){
 		    tokenList.push( {type: 'set-attr', value: scroll(1), id: 'scroll up' } );
 		    state= 'init';
 		    break;
+		case 'T':
+		    tokenList.push( {type: 'set-attr', value: scroll(-1), id: 'scroll down' } );
+		    state= 'init';
+		    break;
 		case 'A':
 		    tokenList.push( {type: 'set-attr', value : cursorMove(-1,0), id: 'cursor up' } );
 		    state= 'init';
@@ -479,6 +485,16 @@ function tokenize( msg ){
 		    args.push( parseInt(token) );
 		    if( args.length == 1 ){
 		    tokenList.push( {type: 'set-attr', value: scroll(args[0]), id: 'scroll up' } );
+		    }else{
+			error('saw too many arguments to scroll clear token ' + msg.substr(startIdx, i-startIdx) );
+			tokenList.push( {type: 'string', value : msg.substr(startIdx, i-startIdx) } );
+		    }
+		    state = 'init';
+		    break;
+		case 'T':
+		    args.push( parseInt(token) );
+		    if( args.length == 1 ){
+		    tokenList.push( {type: 'set-attr', value: scroll( -args[0]), id: 'scroll down' } );
 		    }else{
 			error('saw too many arguments to scroll clear token ' + msg.substr(startIdx, i-startIdx) );
 			tokenList.push( {type: 'string', value : msg.substr(startIdx, i-startIdx) } );
@@ -754,16 +770,6 @@ function sendEscape(){
 	socket.send('');
 }
 
-function backspaceHandler( ev ) {
-    var key = ev.keyCode;
-    switch( key ) {
-	case 8:
-	    socket.send('');
-	    break;
-	default:
-	    break;
-    }
-}
 
 
 function endSelection( ev ){
@@ -788,6 +794,53 @@ function beginSelect( ev ){
 	term.cvs.onmouseup = endSelection;
 	term.cvs.onclick = undefined;
     //}
+}
+
+var showAlert = true;
+function windowEvent( ev ){
+    if( showAlert ){
+	alert("you are leaving this page, if you didn't intent this to happen it is recommended that you run application in a seperate browser window");
+	showAlert = false;
+    }
+}
+
+var altKeyDown = false;
+
+function keyDownHandler( ev ){
+    var key = ev.keyCode;
+    switch( key ){
+	case 18:
+	    altKeyDown = true;
+	    break;
+	default:
+	    break;
+    }
+}
+
+function keyUpHandler( ev ) {
+    var key = ev.keyCode;
+    //handle alt codes
+    if( altKeyDown && key >= 48 && key <= 57 ){
+	key = key - 48;
+	socket.send('' + key);
+    }else{
+	switch( key ) {
+	    case 8:
+		socket.send('');
+		break;
+	    case 18:
+		altKeyDown = false;
+		break;
+	    case 33://page up
+		SendPageUp();
+		break;
+	    case 34://page down
+		SendPageDown();
+		break;
+	    default:
+		break;
+	}
+    }
 }
 
 function keyboardInput( ev ){
@@ -823,4 +876,11 @@ function keyboardInput( ev ){
 	    socket.send(key);
 	    //term.print(key);
     }
+}
+
+function SendPageUp(){
+    socket.send('[5~');
+}
+function SendPageDown(){
+    socket.send('[6~');
 }
