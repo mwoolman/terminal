@@ -318,6 +318,16 @@ function terminalGrid( cnvs, height, width ){
 		this.cvs.height = height * this.text.height;
 		this.width = width;
 		this.height = height;
+		this.textBuffer.length = this.height;
+		for( var i = 0; i < this.height; ++i){
+		    if( this.textBuffer[i] == undefined ){
+			this.textBuffer[i] = [];
+		    } 
+		    this.textBuffer[i].length = this.width;
+		}
+	    // set the scroll Region 
+		this.scrollRegion.start = 0;
+		this.scrollRegion.end  = this.height;
 	    }
 	};
 	this.charAt =  function (x,y) {
