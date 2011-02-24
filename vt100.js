@@ -197,7 +197,6 @@ function changeSize( height, width ){
     term.resize( height, width);
     altTerm.resize( height, width );
     var str = "[8;"+height +";"+width +"t\n";
-    error( "sending  " + str);
     socket.send(str);
 }
 
