@@ -54,7 +54,7 @@ server.listen(8081);
 var io = io.listen(server);
 
 io.on('connection', function(client){
-    var terminal = tty.open('/bin/bash', ['-ic', 'irssi']);
+    var terminal = tty.open('/bin/bash', ['-i']);
     var fd = terminal[0];
     var proc = terminal[1];
     console.log(tty.setWindowSize(proc.fds[0], 24, 80));
@@ -85,6 +85,6 @@ io.on('connection', function(client){
     });
 
     client.on('disconnect', function(){
-     proc.kill('SIGKILL');
+         proc.kill('SIGKILL');
     });
 });

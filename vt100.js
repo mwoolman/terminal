@@ -276,6 +276,9 @@ function tokenize( msg ){
 		    tokenList.push( {type : 'special-char', value: function(){term.cr(); }} );
 		    state = 'init';
 		    break;
+        case '':
+            //we don't want to do anything with the terminal bell at the moment
+            state = 'init';
 		default:
 	    }
 	}//end string state 
@@ -293,9 +296,13 @@ function tokenize( msg ){
 		    break;
 		case '=':
 		case '>':
-		    error("don't know how to deal with " + msg.substr(startIdx) );
+            //ignoring these, they're not really relevant but vim will try to use them
+            //they swap keypad 
 		    state = 'init';
 		    break;
+        default:
+		    error("don't know how to deal with " + msg.substr(startIdx, i-startIdx) );
+           
 	    }
 	}//end escape
 	else if( state == 'xterm' ){
@@ -416,8 +423,12 @@ function tokenize( msg ){
 		case '9':
 		    token += msg.charAt(i);
 		    break;
+        case ';':
+            //for now ignore the first token //don't think its really valid to send commands this way anyways
+            token = '';
+            break;
 		default:
-		    error("recieved unexpected hide-show command ( " + msg.substr(startIdx, i-startIdx) + ' )');
+		    error("recieved unexpected hide-show command ( " + msg.substr(startIdx, i-startIdx +1) + ' )');
 		    state = 'init';
 		    break;
 	    }
@@ -840,6 +851,9 @@ function keyUpHandler( ev ) {
 	    case 18:
 		altKeyDown = false;
 		break;
+        case 27:
+        sendEscape();           
+        break;
 	    case 33://page up
 		SendPageUp();
 		break;
