@@ -7,6 +7,7 @@ var http = require('http'),
     fs = require ('fs'),
     sys = require('sys'),
     io = require ('socket.io'),
+    tty = require('tty'),
     spawn = require('child_process').spawn,
     server;
 var pth;
@@ -53,31 +54,38 @@ server.listen(8081);
 var io = io.listen(server);
 
 io.on('connection', function(client){
-    var proc = spawn("irssi", []);
-    //var proc = spawn('/bin/bash', ['-i']);
+    var terminal = tty.open('/bin/bash', []);
+    var fd = terminal[0];
+    var proc = terminal[1];
+    console.log(tty.setWindowSize(proc.fds[0], 24, 80));
     //proc.stdout.setEncoding('utf8');
     //proc.stderr.setEncoding('utf8');
-    proc.stdout.on('data', function(data){
+    fd.on('data', function(data){
 	//console.log('stdout: ' + data);
-	client.send(data.toString('utf8'));
+        client.send(data.toString('utf8'));
     });
-    proc.stderr.on('data', function(data){
-	//console.log('stderr: ')
-	//console.log( data);
-	client.send(data.toString('utf8'));
 
-    });
     proc.on('exit', function(code){
-	console.log('process exited with code ' + code);
+        console.log('process exited with code ' + code);
     });
+
     client.on('message', function(message){
-	//console.log('got message ' + message );
-	//pass the data through to the process
-	if( proc.stdin.writable ){
-	    var result = proc.stdin.write(message);
-	}
+        //console.log('got message ' + message );
+        //pass the data through to the process
+        if( message.substr(0,4) == "[8;"){
+            var args = message.split(';');
+            var height = parseInt(args[1]);
+            var width = parseInt(args[2].substr(0, args[2].length -2));
+            console.log("setting window to height: " + height + " width: " + width);
+            tty.setWindowSize(proc.fds[0], height, width);
+            proc.kill('SIGWINCH');
+        }else if( fd.writable ){
+            var result = fd.write(message);
+        }
     });
+
     client.on('disconnect', function(){
-	 proc.stdin.end()//end the process
+	 fd.end()//end the process
+     proc.kill('SIGKILL');
     });
 });
