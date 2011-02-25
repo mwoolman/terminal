@@ -54,10 +54,10 @@ server.listen(8081);
 var io = io.listen(server);
 
 io.on('connection', function(client){
-    var terminal = tty.open('/bin/bash', ['-i']);
+    var terminal = tty.open('/bin/bash', ['-ic', 'irssi']);
     var fd = terminal[0];
     var proc = terminal[1];
-    console.log(tty.setWindowSize(proc.fds[0], 24, 80));
+    tty.setWindowSize(proc.fds[0], 24, 80);
     //proc.stdout.setEncoding('utf8');
     //proc.stderr.setEncoding('utf8');
     fd.on('data', function(data){
@@ -78,6 +78,11 @@ io.on('connection', function(client){
             var width = parseInt(args[2].substr(0, args[2].length -2));
             console.log("setting window to height: " + height + " width: " + width);
             tty.setWindowSize(proc.fds[0], height, width);
+            tty.setWindowSize(proc, height, width);
+            tty.setWindowSize(fd, height, width);
+            //console.log(tty.getWindowSize(proc.fds[0]));
+            //console.log(tty.getWindowSize(proc.fds[1]));
+            //console.log(tty.getWindowSize(proc.fds[2]));
             var res = proc.kill('SIGWINCH');
         }else if( fd.writable ){
             var result = fd.write(message);
