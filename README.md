@@ -17,6 +17,6 @@ Notes
 
 If you want window resizing to work then you will need to patch node.js 
 enter the node src directory and fix line 298 by changing
-    `NODE_SET_METHOD(target, "setWindowSize", GetWindowSize);`
+    NODE_SET_METHOD(target, "setWindowSize", GetWindowSize);
   to
-    `NODE_SET_METHOD(target, "setWindowSize", SetWindowSize);`
+    NODE_SET_METHOD(target, "setWindowSize", SetWindowSize);
