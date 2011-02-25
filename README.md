@@ -10,7 +10,7 @@ Installation
 * install [Node.js](http://github.com/ry/node/tree/master) if you haven't already 
 * install the [socket.io library](http://socket.io/)
 * go to the terminal source directory and run: `node server.js`
-* visit localhost:8081 in the browser of your choice -- works best in chrome 
+* visit [localhost:8081](localhost:8081) in the browser of your choice -- works best in chrome 
 
 Notes
 -----
