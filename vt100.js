@@ -120,12 +120,17 @@ function terminal(cnvs, height, width){
     };
     this.newline = function (){
 	    this.clearCursor();
-	    if( this.csr.y < this.height-1){
-		    this.__proto__.csr.y++;
-		    this.__proto__.csr.x = 0;
-	    }else{
-		this.__proto__.csr.x = 0;
-		this.scrollUp();
+	    var inScrollRegion = true;
+	    if( this.csr.y > this.scrollRegion.end || this.csr.y < this.scrollRegion.start ){
+		var inScrollRegion = false;//hope this is never the case
+	    }
+	    if( inScrollRegion ){
+		if( this.csr.y < this.scrollRegion.end -1){
+			this.setCursor( 0, this.csr.y +1 );
+		}else{
+		    this.setCursor( 0, this.csr.y );
+		    this.scrollUp();
+		}
 	    }
     };
     this.cr = function(){
@@ -230,7 +235,7 @@ function swapBuffers(){
 
 function error(msg){
     var el = document.createElement('p');
-    el.innerHTML = msg;
+    el.innerHTML = msg.replace('\n' , "\\n");
     document.getElementById('errors').appendChild(el);
 }
 
@@ -354,6 +359,9 @@ function tokenize( msg ){
 		    token += msg.charAt(i);
 		    state = 'vt-argument';
 		break;
+		case '>':
+		    state = 'vt-argument';
+		    break;
 		case 'f':
 		case 'H':
 		    tokenList.push( {type: 'set-attr', value : cursorMoveTo(0,0), id: 'move cursor' }); 
@@ -401,9 +409,16 @@ function tokenize( msg ){
 		    state= 'init';
 		    break;
 		case '?':
-		    //am ignoring this for now
 		    state = 'hide-show';
 		    break;
+		case 'L':
+		    //believe this will work for scroll
+		    tokenList.push({type: 'set-attr', value: scroll(-1), id: 'insert line'});
+		    state = 'init';
+		    break;
+		default:
+		    state = 'init';
+		    error("didn't recognize token " + msg.substr(startIdx, i-startIdx +1));
 		
 		}
 	}//end of vt100
@@ -453,6 +468,11 @@ function tokenize( msg ){
 		case '8':
 		case '9':
 		    token += msg.charAt(i);
+		    break;
+		case 'c': //can only get here from csi > arg c
+		    //this is a request for identification information
+		    //dont really care to responde properly
+		    state = 'init';
 		    break;
 		case 'f':
 		case 'H':
@@ -515,6 +535,16 @@ function tokenize( msg ){
 		    state = 'init';
 		    break;
 		case 'T':
+		    args.push( parseInt(token) );
+		    if( args.length == 1 ){
+		    tokenList.push( {type: 'set-attr', value: scroll( -args[0]), id: 'scroll down' } );
+		    }else{
+			error('saw too many arguments to scroll clear token ' + msg.substr(startIdx, i-startIdx) );
+			tokenList.push( {type: 'string', value : msg.substr(startIdx, i-startIdx) } );
+		    }
+		    state = 'init';
+		    break;
+		case 'L':
 		    args.push( parseInt(token) );
 		    if( args.length == 1 ){
 		    tokenList.push( {type: 'set-attr', value: scroll( -args[0]), id: 'scroll down' } );
