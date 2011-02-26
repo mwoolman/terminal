@@ -359,6 +359,9 @@ function tokenize( msg ){
 		    token += msg.charAt(i);
 		    state = 'vt-argument';
 		break;
+		case '>':
+		    state = 'vt-argument';
+		    break;
 		case 'f':
 		case 'H':
 		    tokenList.push( {type: 'set-attr', value : cursorMoveTo(0,0), id: 'move cursor' }); 
@@ -465,6 +468,11 @@ function tokenize( msg ){
 		case '8':
 		case '9':
 		    token += msg.charAt(i);
+		    break;
+		case 'c': //can only get here from csi > arg c
+		    //this is a request for identification information
+		    //dont really care to responde properly
+		    state = 'init';
 		    break;
 		case 'f':
 		case 'H':
