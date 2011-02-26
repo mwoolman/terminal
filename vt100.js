@@ -56,14 +56,16 @@ function terminal(cnvs, height, width){
 	    bgcolor = this.background;
 	}
 	if( this.blink.on){
-		this.drawBlock(x,y);
 		if( c != undefined) {
-			this.writeChar(c,x,y, bgcolor);
+			this.writeChar( c.ch , x, y, bgcolor, this.text.color, false);
+		}else{
+		    this.drawBlock( x, y );
 		}
 	}else{
-		this.drawBlock(x,y, bgcolor);
 		if( c != undefined ){
-			this.writeChar(c,x,y );
+			this.writeChar(c.ch,x,y, c.fc, c.bc, false );
+		}else{
+		    this.drawBlock(x,y, bgcolor);
 		}
 	}
 	this.blink.on = !this.blink.on;
@@ -132,9 +134,10 @@ function terminal(cnvs, height, width){
     this.clearCursor = function (){
 	if( !this.blink.on ){
 	    var c = this.charAt(this.csr.x, this.csr.y);
-	    this.clearBlock(this.csr.x, this.csr.y);
 	    if( c != undefined ){
-		    this.writeChar(c, this.csr.x, this.csr.y);
+		    this.writeChar(c.ch, this.csr.x, this.csr.y, c.fc, c.bc);
+	    }else{
+		this.clearBlock(this.csr.x, this.csr.y);
 	    }
 	}
     };

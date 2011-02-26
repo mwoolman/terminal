@@ -54,7 +54,7 @@ server.listen(8081);
 var io = io.listen(server);
 
 io.on('connection', function(client){
-    var terminal = tty.open('irssi', []);
+    var terminal = tty.open('bash', ['-i']);
     var fd = terminal[0];
     var proc = terminal[1];
     tty.setWindowSize(proc.fds[0], 24, 80);
