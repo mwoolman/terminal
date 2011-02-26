@@ -1,4 +1,11 @@
 
+function bufferEntry( ch, fgColor, bgColor ){
+    this.ch = ch;
+    this.fc = fgColor;
+    this.bc = bgColor;
+    return true;
+}
+
 function terminalGrid( cnvs, height, width ){
 	if( cnvs == undefined ){
 	    return;
@@ -94,7 +101,7 @@ function terminalGrid( cnvs, height, width ){
 	};
 	this.drawSel = function(invert){
 	    if( this.__proto__ instanceof terminalGrid ){
-		this.__proto__.drawSel(x, y);
+		this.__proto__.drawSel( invert);
 	    }else{
 		var curx, cury, stopx, stopy, tc, bc;
 		if( this.sel.ey >= this.sel.sy){ 
@@ -111,22 +118,27 @@ function terminalGrid( cnvs, height, width ){
 		    curx = this.sel.ey;
 		    stopx = this.sel.sx;
 		}
-		if(invert){
-		    tc = this.text.color;
-		    bc = this.background;
-		}else{
-		    tc = this.background;
-		    bc = this.text.color;
-		}
 		copyBuffer = '';
 		//loop over selection and highlight
 		while( curx != stopx || cury != stopy ){
-		    this.drawRegion(curx, cury,1,1, bc);
-		    this.writeChar(this.textBuffer[cury][curx], curx, cury, tc );
-		    if( this.textBuffer[cury][curx] == undefined ){
+		    //set up the color
+		    var c = this.textBuffer[cury][curx];
+		    if( c == undefined ){
+			c = new bufferEntry ( ' ', this.text.color, this.background );
+		    }
+		    if(invert){
+			tc = c.fc;
+			bc = c.bc;
+		    }else{
+			tc = this.background;
+			bc = this.text.color;
+		    }
+
+		    this.writeChar(c.ch, curx, cury, tc, bc, false );
+		    if( c == undefined ){
 			copyBuffer += ' ';
 		    }else{
-			copyBuffer += this.textBuffer[cury][curx];
+			copyBuffer += c.ch;
 		    }
 		    curx++;
 		    if( curx >= this.width ){
@@ -216,9 +228,12 @@ function terminalGrid( cnvs, height, width ){
 	    }
 	};
 	
-	this.writeStr = function( str, x, y, color, bgcolor ){
+	this.writeStr = function( str, x, y, color, bgcolor, overwrite){
+	    if( overwrite == undefined ){
+		overwrite = true;
+	    }
 	    if( this.__proto__ instanceof terminalGrid ){
-		this.__proto__.writeStr( str, x,y, color, bgcolor );
+		this.__proto__.writeStr( str, x,y, color, bgcolor, overwrite );
 	    }else{
 		if(color == undefined ) {
 		color = this.text.color;
@@ -239,8 +254,10 @@ function terminalGrid( cnvs, height, width ){
 		this.ctx.textBaseline = 'top';
 		this.drawRegion(x, y, str.length, 1, bgcolor );
 		//save stuff to text buffer
-		for( var i = 0; i < str.length; ++i ){
-		    this.textBuffer[y][x+i] = str.charAt(i);
+		if( overwrite ){
+		    for( var i = 0; i < str.length; ++i ){
+			this.textBuffer[y][x+i] = new bufferEntry(str.charAt(i), color, bgcolor );
+		    }
 		}
 		//render text
 		this.ctx.fillText( str, x*this.text.width, y*this.text.height );
@@ -250,9 +267,12 @@ function terminalGrid( cnvs, height, width ){
 	}
 	
 	//character functions
-	this.writeChar =  function( ch, x, y, color ){
+	this.writeChar =  function( ch, x, y, color, bgColor, overwrite ){
+	    if( overwrite == undefined ){
+		overwrite = true;
+	    }
 	    if( this.__proto__ instanceof terminalGrid ){
-		this.__proto__.writeChar( ch, x, y, color );
+		this.__proto__.writeChar( ch, x, y, color, bgColor, overwrite );
 	    }else{
 		if( ch == undefined ){
 		    return;
@@ -273,8 +293,11 @@ function terminalGrid( cnvs, height, width ){
 		this.ctx.fillStyle = color;
 		this.ctx.textBaseline = 'top';
 		//save the text to buffer
-		this.textBuffer[y][x] = ch;
+		if( overwrite ){
+		    this.textBuffer[y][x] = new bufferEntry(ch, color, bgColor );
+		}
 		//draw the text
+		this.drawRegion( x, y, 1, 1, bgColor );
 		this.ctx.fillText(ch, x*this.text.width, y*this.text.height);			
 		this.ctx.restore();
 	    }

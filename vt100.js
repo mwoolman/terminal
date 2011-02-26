@@ -1,3 +1,4 @@
+var debug = false;
 
 var term = undefined;
 var altTerm = undefined;
@@ -55,14 +56,16 @@ function terminal(cnvs, height, width){
 	    bgcolor = this.background;
 	}
 	if( this.blink.on){
-		this.drawBlock(x,y);
 		if( c != undefined) {
-			this.writeChar(c,x,y, bgcolor);
+			this.writeChar( c.ch , x, y, bgcolor, this.text.color, false);
+		}else{
+		    this.drawBlock( x, y );
 		}
 	}else{
-		this.drawBlock(x,y, bgcolor);
 		if( c != undefined ){
-			this.writeChar(c,x,y );
+			this.writeChar(c.ch,x,y, c.fc, c.bc, false );
+		}else{
+		    this.drawBlock(x,y, bgcolor);
 		}
 	}
 	this.blink.on = !this.blink.on;
@@ -131,9 +134,10 @@ function terminal(cnvs, height, width){
     this.clearCursor = function (){
 	if( !this.blink.on ){
 	    var c = this.charAt(this.csr.x, this.csr.y);
-	    this.clearBlock(this.csr.x, this.csr.y);
 	    if( c != undefined ){
-		    this.writeChar(c, this.csr.x, this.csr.y);
+		    this.writeChar(c.ch, this.csr.x, this.csr.y, c.fc, c.bc);
+	    }else{
+		this.clearBlock(this.csr.x, this.csr.y);
 	    }
 	}
     };
@@ -225,11 +229,9 @@ function swapBuffers(){
 }
 
 function error(msg){
-  /*  var el = document.createElement('p');
+    var el = document.createElement('p');
     el.innerHTML = msg;
-    document.getElementById('errors').appendChild(el);*/
-    //don't want to print debugging messages in production
-    return;
+    document.getElementById('errors').appendChild(el);
 }
 
 //create a tokenizer ideally parse stuff more correctly and
@@ -766,10 +768,21 @@ function processTokens( tokens ){
 }
 
 socket.on('message', function (msg){
+	if( debug ){
+	    error( 'csr x: ' + term.csr.x + ' y: ' + term.csr.y);
+	    error(msg);
+	}
 	tokens = tokenize(msg );
 	processTokens( tokens );
 });
 
+function enableDebug(){
+    debug = true;
+}
+
+function disableDebug(){
+    debug = false;
+}
 
 
 function sendbackspace(){
