@@ -1,4 +1,3 @@
-var debug = false;
 
 var term = undefined;
 var altTerm = undefined;
@@ -226,9 +225,11 @@ function swapBuffers(){
 }
 
 function error(msg){
-    var el = document.createElement('p');
+  /*  var el = document.createElement('p');
     el.innerHTML = msg;
-    document.getElementById('errors').appendChild(el);
+    document.getElementById('errors').appendChild(el);*/
+    //don't want to print debugging messages in production
+    return;
 }
 
 //create a tokenizer ideally parse stuff more correctly and
@@ -765,21 +766,10 @@ function processTokens( tokens ){
 }
 
 socket.on('message', function (msg){
-	if( debug ){
-	    error( 'csr x: ' + term.csr.x + ' y: ' + term.csr.y);
-	    error(msg);
-	}
 	tokens = tokenize(msg );
 	processTokens( tokens );
 });
 
-function enableDebug(){
-    debug = true;
-}
-
-function disableDebug(){
-    debug = false;
-}
 
 
 function sendbackspace(){
