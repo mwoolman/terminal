@@ -234,8 +234,8 @@ function swapBuffers(){
 }
 
 function error(msg){
-    return
-    /* don't really want to print error messages
+    return;
+    /* don't really want error output
     var el = document.createElement('p');
     el.innerHTML = msg.replace('\n' , "\\n");
     document.getElementById('errors').appendChild(el);
@@ -480,6 +480,11 @@ function tokenize( msg ){
 		case 'c': //can only get here from csi > arg c
 		    //this is a request for identification information
 		    //dont really care to responde properly
+		    state = 'init';
+		    break;
+		case 'h':
+		    //best I can tell this wants the cursor underlined
+		    //don't really care but need to capture this for irssi
 		    state = 'init';
 		    break;
 		case 'f':
