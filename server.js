@@ -76,7 +76,7 @@ io.on('connection', function(client){
             var args = message.split(';');
             var height = parseInt(args[1]);
             var width = parseInt(args[2].substr(0, args[2].length -2));
-            console.log("setting window to height: " + height + " width: " + width);
+ //           console.log("setting window to height: " + height + " width: " + width);
             tty.setWindowSize(proc.fds[0], height, width);
             tty.setWindowSize(proc, height, width);
             tty.setWindowSize(fd, height, width);
