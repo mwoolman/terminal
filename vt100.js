@@ -479,6 +479,11 @@ function tokenize( msg ){
 		    //dont really care to responde properly
 		    state = 'init';
 		    break;
+		case 'h':
+		    //best I can tell this wants the cursor underlined
+		    //don't really care but need to capture this for irssi
+		    state = 'init';
+		    break;
 		case 'f':
 		case 'H':
 		    args.push( parseInt(token) );
