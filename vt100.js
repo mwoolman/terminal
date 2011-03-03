@@ -234,9 +234,12 @@ function swapBuffers(){
 }
 
 function error(msg){
+    return
+    /* don't really want to print error messages
     var el = document.createElement('p');
     el.innerHTML = msg.replace('\n' , "\\n");
     document.getElementById('errors').appendChild(el);
+    */
 }
 
 //create a tokenizer ideally parse stuff more correctly and
@@ -361,6 +364,11 @@ function tokenize( msg ){
 		break;
 		case '>':
 		    state = 'vt-argument';
+		    break;
+		case 'h':
+		    //best I can tell this wants the cursor underlined
+		    //don't really care but need to capture this for irssi
+		    state = 'init';
 		    break;
 		case 'f':
 		case 'H':
