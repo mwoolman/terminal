@@ -362,6 +362,11 @@ function tokenize( msg ){
 		case '>':
 		    state = 'vt-argument';
 		    break;
+		case 'h':
+		    //best I can tell this wants the cursor underlined
+		    //don't really care but need to capture this for irssi
+		    state = 'init';
+		    break;
 		case 'f':
 		case 'H':
 		    tokenList.push( {type: 'set-attr', value : cursorMoveTo(0,0), id: 'move cursor' }); 
