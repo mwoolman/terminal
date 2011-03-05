@@ -367,8 +367,10 @@ function terminalGrid( cnvs, height, width ){
 		this.__proto__.scrollDown();
 	    }else{
 		this.ctx.save();
-		var i_data = this.ctx.getImageData(0, this.scrollRegion.start * this.text.height, this.cvs.width,  (this.scrollRegion.end -2) * this.text.height );
-		this.ctx.putImageData( i_data,0, (this.scrollRegion.start +1) * this.text.height);
+		if( this.scrollRegion.start != (this.scrollRegion.end -1) ){ // check if we are just clearing a line
+		    var i_data = this.ctx.getImageData(0, this.scrollRegion.start * this.text.height, this.cvs.width,  (this.scrollRegion.end -1 - this.scrollRegion.start) * this.text.height );
+		    this.ctx.putImageData( i_data,0, (this.scrollRegion.start +1) * this.text.height);
+		}
 		this.ctx.clearRect(0, this.scrollRegion.start * this.text.height, this.cvs.width, this.text.height );
 		var newline = [];
 		newline.length = this.width;
@@ -385,8 +387,10 @@ function terminalGrid( cnvs, height, width ){
 		this.__proto__.scrollUp();
 	    }else{
 		this.ctx.save();
-		var i_data = this.ctx.getImageData(0,(this.scrollRegion.start +1) * this.text.height,this.cvs.width, (this.scrollRegion.end * this.text.height) - this.text.height);
-		this.ctx.putImageData(i_data, 0, this.scrollRegion.start*this.text.height);
+		if( this.scrollRegion.start != (this.scrollRegion.end -1) ){ // check if we are just clearing a line
+		    var i_data = this.ctx.getImageData(0,(this.scrollRegion.start +1) * this.text.height,this.cvs.width, (this.scrollRegion.end -1 - this.scrollRegion.start )* this.text.height);
+		    this.ctx.putImageData(i_data, 0, this.scrollRegion.start*this.text.height);
+		}
 		this.ctx.clearRect(0, (this.scrollRegion.end-1)*this.text.height, this.cvs.width, this.text.height);
 		var newline = [];
 		newline.length = this.width;
