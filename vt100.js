@@ -188,6 +188,11 @@ function init(){
     document.onkeyup = keyUpHandler;
     document.onkeydown = keyDownHandler;
     window.addEventListener("blur", windowEvent, true );
+    //stop backspace from going back
+    //code comes from backspace-means-backspace chrome extension
+    //http://www.nollegcraft.com/code/GoogleChromeExtension/BackspaceMeansBackspace/index.html
+    window.addEventListener('keydown',function(e){if(e.keyIdentifier=='U+0008'||e.keyIdentifier=='Backspace'){if(e.target==document.body){e.preventDefault();}}},true);
+    
     //register mouse handler for selection
     maincvs.onmousedown = beginSelect;
     altcvs.onmousedown = beginSelect;
@@ -197,6 +202,7 @@ function init(){
     document.onpaste = pasteFunc; 
 
     createColorWidget();
+    
 }
 
 
