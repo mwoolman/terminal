@@ -234,12 +234,10 @@ function swapBuffers(){
 }
 
 function error(msg){
-    return;
-    /* don't really want error output
     var el = document.createElement('p');
-    el.innerHTML = msg.replace('\n' , "\\n");
+    el.innerHTML = msg.replace(/\n/g , "\\n");
+    el.innerHTML = msg.replace(/\[/g, "[CSI]");
     document.getElementById('errors').appendChild(el);
-    */
 }
 
 //create a tokenizer ideally parse stuff more correctly and
@@ -421,7 +419,11 @@ function tokenize( msg ){
 		    break;
 		case 'L':
 		    //believe this will work for scroll
-		    tokenList.push({type: 'set-attr', value: scroll(-1), id: 'insert line'});
+		    tokenList.push({type: 'set-attr', value: insertLine(1), id: 'insert line'});
+		    state = 'init';
+		    break;
+		case 'M':
+		    tokenList.push({type: 'set-attr', value: insertLine(-1), id: 'delete line'});
 		    state = 'init';
 		    break;
 		default:
@@ -560,9 +562,19 @@ function tokenize( msg ){
 		case 'L':
 		    args.push( parseInt(token) );
 		    if( args.length == 1 ){
-		    tokenList.push( {type: 'set-attr', value: scroll( -args[0]), id: 'scroll down' } );
+			tokenList.push( {type: 'set-attr', value: insertLine( args[0]), id: 'insert line' } );
 		    }else{
-			error('saw too many arguments to scroll clear token ' + msg.substr(startIdx, i-startIdx) );
+			error('saw too many arguments to an insert line token ' + msg.substr(startIdx, i-startIdx +1) );
+			tokenList.push( {type: 'string', value : msg.substr(startIdx, i-startIdx) } );
+		    }
+		    state = 'init';
+		    break;
+		case 'L':
+		    args.push( parseInt(token) );
+		    if( args.length == 1 ){
+			tokenList.push( {type: 'set-attr', value: insertLine( -args[0]), id: 'delete line' } );
+		    }else{
+			error('saw too many arguments to a delete line token ' + msg.substr(startIdx, i-startIdx +1) );
 			tokenList.push( {type: 'string', value : msg.substr(startIdx, i-startIdx) } );
 		    }
 		    state = 'init';
@@ -646,6 +658,28 @@ function processXterm( str, option ){
 	    document.title = str;
 	}//ignore other possibilities
     };
+}
+
+function insertLine( val ){
+    return function(){
+	if( term.csr.y >= term.scrollRegion.start && term.csr.y < term.scrollRegion.end ){
+	    var start = term.scrollRegion.start;
+	    term.scrollRegion.start = term.csr.y;
+	    if( val < 0 ){
+		while ( val < 0 ){
+		    term.scrollUp();
+		    val++;
+		}
+	    }else{
+		while ( val > 0 ){
+		    term.scrollDown();
+		    val--;
+		}
+	    }
+	    //restore scroll region
+	    term.scrollRegion.start = start;
+	}
+    }
 }
 
 function scroll( val ){
