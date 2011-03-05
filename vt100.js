@@ -569,7 +569,7 @@ function tokenize( msg ){
 		    }
 		    state = 'init';
 		    break;
-		case 'L':
+		case 'M':
 		    args.push( parseInt(token) );
 		    if( args.length == 1 ){
 			tokenList.push( {type: 'set-attr', value: insertLine( -args[0]), id: 'delete line' } );
