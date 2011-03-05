@@ -234,9 +234,12 @@ function swapBuffers(){
 }
 
 function error(msg){
+    return;
+    /* don't really want error output
     var el = document.createElement('p');
     el.innerHTML = msg.replace('\n' , "\\n");
     document.getElementById('errors').appendChild(el);
+    */
 }
 
 //create a tokenizer ideally parse stuff more correctly and
